@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Condo Booking & Availability</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1d4ed8;
+      --primary-hover: #1e40af;
+      --surface: #ffffff;
+      --bg: #f8fafc;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --focus-ring: #0284c7;
+      --error-bg: #fee2e2;
+      --error-text: #991b1b;
+      --success-bg: #f0fdf4;
+      --success-text: #166534;
+      --card-bg: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      line-height: 1.5;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 10px;
+      background: var(--primary);
+      color: #fff;
+      padding: 8px 16px;
+      z-index: 100;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: 600;
+      transition: top 0.2s ease;
+    }
+    .skip-link:focus {
+      top: 10px;
+    }
+
+    .booking-wrapper {
+      max-width: 680px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      background: var(--card-bg);
+    }
+
+    .hero-banner {
+      min-height: 160px;
+      background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.75)), url('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 22px;
+      color: white;
+    }
+
+    .hero-banner h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-banner p {
+      font-size: 14px;
+      opacity: 0.95;
+      margin-top: 4px;
+    }
+
+    .booking-main {
+      padding: 24px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 580px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      .booking-main {
+        padding: 16px;
+      }
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    input, select {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px 14px;
+      font-size: 15px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background-color: var(--surface);
+      color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--focus-ring);
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+    }
+
+    .field-hint {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Google Calendar Embed Container */
+    .gcal-embed-card {
+      background: #ffffff;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .gcal-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .gcal-direct-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .gcal-direct-link:hover {
+      text-decoration: underline;
+    }
+
+    .gcal-iframe-wrapper {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      background: #f1f5f9;
+    }
+
+    .gcal-iframe-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
+    .stay-summary-card {
+      background: #eff6ff;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .stay-details {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stay-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stay-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .stay-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+
+    .stay-badge {
+      font-size: 12px;
+      font-weight: 700;
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 4px 10px;
+      border-radius: 9999px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      min-height: 50px;
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 14px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn-submit:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-submit:disabled {
+      background: #64748b;
+      cursor: not-allowed;
+    }
+
+    .confirmation-box {
+      display: none;
+      background: var(--success-bg);
+      border: 1.5px solid #86efac;
+      padding: 24px;
+      border-radius: 12px;
+      color: var(--success-text);
+      margin-top: 10px;
+    }
+
+    .calendar-actions {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn-cal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      background: #ffffff;
+      border: 1px solid #16a34a;
+      color: #166534;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      min-height: 44px;
+      cursor: pointer;
+    }
+    .btn-cal:hover {
+      background: #f0fdf4;
+    }
+
+    .status-announcer {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<a href="#bookingForm" class="skip-link">Skip to reservation form</a>
+
+<div class="booking-wrapper">
+  <header class="hero-banner">
+    <h1>2-Bedroom Condominium</h1>
+    <p>Check real-time Google Calendar availability and reserve your stay instantly.</p>
+  </header>
+
+  <main class="booking-main">
+    <div id="srAnnouncement" class="sr-only" role="status" aria-live="polite">Google Calendar loaded.</div>
+
+    <form id="bookingForm" onsubmit="submitReservation(event)" novalidate>
+      <div class="form-group">
+        <label id="calendarLabel">
+          Live Calendar & Availability (418 Serin Tagaytay)
+        </label>
+        
+        <div class="gcal-embed-card">
+          <div class="gcal-toolbar">
+            <span>📅 Real-time Google Calendar Schedule</span>
+            <a id="openGCalDirectLink" class="gcal-direct-link" target="_blank" rel="noopener noreferrer" href="https://calendar.google.com/calendar/u/0/r?cid=NWUyNTA0MThmOTdkMjAwOGJmZjkzY2MxMGE2MzhiMmFhYmU5ODFhZjJkNWUyNzFiMDU4ZWI4ODM1ZGRlMmFlMkBncm91cC5jYWxlbmRhci5nb29nbGUuY29t">
+              Open in Google Calendar ↗
+            </a>
+          </div>
+          <div class="gcal-iframe-wrapper">
+            <iframe 
+              id="gcalEmbedIframe"
+              title="Condo Booking Availability Google Calendar"
+              src="https://calendar.google.com/calendar/embed?src=5e250418f97d2008bff93cc10a638b2aabe981af2d5e271b058eb8835dde2ae2%40group.calendar.google.com&ctz=Asia%2FManila&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&showTz=1&mode=MONTH"
+              loading="lazy">
+            </iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Selection Section -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="checkInDate">
+            Check-in Date <span aria-hidden="true" style="color:#b91c1c;">*</span>
+          </label>
+          <input 
+            type="date" 
+            id="checkInDate" 
+            name="checkInDate" 
+            required 
+            aria-required="true"
+            onchange="onDateInputChange()">
+        </div>
+        <div class="form-group">
+          <label for="checkOutDate">
+            Check-out Date <span aria-hidden="true" style="color:#b91c1c;">*</span>
+          </label>
+          <input 
+            type="date" 
+            id="checkOutDate" 
+            name="checkOutDate" 
+            required 
+            aria-required="true"
+            onchange="onDateInputChange()">
+        </div>
+      </div>
+
+      <div id="staySummaryCard" class="stay-summary-card" style="display:none;" aria-live="polite">
+        <div class="stay-details">
+          <div class="stay-col">
+            <span class="stay-label">Check-in</span>
+            <span class="stay-value" id="summaryCheckIn">—</span>
+          </div>
+          <div class="stay-arrow" aria-hidden="true">→</div>
+          <div class="stay-col">
+            <span class="stay-label">Check-out</span>
+            <span class="stay-value" id="summaryCheckOut">—</span>
+          </div>
+          <div class="stay-badge" id="summaryNights">0 nights</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="guestCount">
+          Number of Guests <span aria-hidden="true" style="color:#b91c1c;">*</span>
+        </label>
+        <select id="guestCount" name="guestCount" required aria-required="true">
+          <option value="1">1 Guest</option>
+          <option value="2" selected>2 Guests</option>
+          <option value="3">3 Guests</option>
+          <option value="4">4 Guests</option>
+          <option value="5">5 Guests</option>
+          <option value="6">6 Guests (Max occupancy)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="guestName">
+          Full Name <span aria-hidden="true" style="color:#b91c1c;">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="guestName" 
+          name="guestName"
+          placeholder="e.g. Maria Santos" 
+          required 
+          aria-required="true" 
+          autocomplete="name">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="guestEmail">
+            Email Address <span aria-hidden="true" style="color:#b91c1c;">*</span>
+          </label>
+          <input 
+            type="email" 
+            id="guestEmail" 
+            name="guestEmail"
+            placeholder="maria@example.com" 
+            required 
+            aria-required="true" 
+            autocomplete="email"
+            inputmode="email">
+        </div>
+        <div class="form-group">
+          <label for="guestPhone">
+            Phone Number <span aria-hidden="true" style="color:#b91c1c;">*</span>
+          </label>
+          <input 
+            type="tel" 
+            id="guestPhone" 
+            name="guestPhone"
+            placeholder="+63 (917) 000-0000" 
+            required 
+            aria-required="true" 
+            autocomplete="tel"
+            inputmode="tel">
+        </div>
+      </div>
+
+      <button type="submit" id="submitBtn" class="btn-submit">
+        <span>Confirm and Lock in Reservation</span>
+      </button>
+
+      <div id="statusMessage" class="status-announcer" role="status" aria-live="polite"></div>
+    </form>
+
+    <!-- Confirmation Area -->
+    <section id="confirmationBox" class="confirmation-box" aria-live="assertive">
+      <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">🎉 Reservation Confirmed!</h2>
+      <p id="confText" style="font-size: 14px; line-height: 1.6;"></p>
+      
+      <div class="calendar-actions">
+        <a id="addToGoogleCalBtn" class="btn-cal" target="_blank" rel="noopener noreferrer">
+          📅 Add to My Google Calendar
+        </a>
+        <button type="button" class="btn-cal" onclick="downloadIcsFile()">
+          📥 Download .ICS (Apple/Outlook)
+        </button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const CALENDAR_ID = '5e250418f97d2008bff93cc10a638b2aabe981af2d5e271b058eb8835dde2ae2@group.calendar.google.com';
+  let currentReservation = null;
+  let currentBookedRanges = [];
+
+  const todayStr = toIso(new Date());
+
+  window.addEventListener('DOMContentLoaded', () => {
+    // Set min date on date inputs to today
+    const inInput = document.getElementById('checkInDate');
+    const outInput = document.getElementById('checkOutDate');
+    if (inInput) inInput.min = todayStr;
+    if (outInput) outInput.min = todayStr;
+
+    announceStatus("Fetching Google Calendar availability...");
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run
+        .withSuccessHandler(onBookedRangesLoaded)
+        .withFailureHandler(() => {
+          onBookedRangesLoaded([]);
+        })
+        .getBookedRanges();
+    } else {
+      onBookedRangesLoaded([]);
+    }
+  });
+
+  function onBookedRangesLoaded(ranges) {
+    currentBookedRanges = ranges || [];
+    announceStatus("Google Calendar availability updated.");
+  }
+
+  function onDateInputChange() {
+    const inVal = document.getElementById('checkInDate').value;
+    const outVal = document.getElementById('checkOutDate').value;
+    const outInput = document.getElementById('checkOutDate');
+
+    if (inVal && outInput) {
+      outInput.min = inVal;
+    }
+
+    if (inVal && outVal) {
+      if (outVal <= inVal) {
+        document.getElementById('statusMessage').textContent = "⚠️ Check-out date must be after check-in date.";
+        document.getElementById('statusMessage').style.color = "#b91c1c";
+        hideStaySummary();
+        return;
+      }
+      if (rangeHasConflict(inVal, outVal)) {
+        document.getElementById('statusMessage').textContent = "⚠️ Selected range overlaps with an existing reservation on Google Calendar.";
+        document.getElementById('statusMessage').style.color = "#b91c1c";
+        hideStaySummary();
+        return;
+      }
+
+      document.getElementById('statusMessage').textContent = "";
+      updateStaySummary(new Date(inVal + 'T00:00:00'), new Date(outVal + 'T00:00:00'));
+      announceStatus(`Selected check-in: ${inVal}, check-out: ${outVal}`);
+    } else {
+      hideStaySummary();
+    }
+  }
+
+  function rangeHasConflict(start, end) {
+    return currentBookedRanges.some(r => start < r.to && end > r.from);
+  }
+
+  function updateStaySummary(startDate, endDate) {
+    const card = document.getElementById('staySummaryCard');
+    const inEl = document.getElementById('summaryCheckIn');
+    const outEl = document.getElementById('summaryCheckOut');
+    const nightsEl = document.getElementById('summaryNights');
+
+    const opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+    inEl.textContent = startDate.toLocaleDateString(undefined, opts);
+    outEl.textContent = endDate.toLocaleDateString(undefined, opts);
+
+    const diffTime = Math.abs(endDate - startDate);
+    const nights = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    nightsEl.textContent = nights === 1 ? '1 night' : `${nights} nights`;
+
+    card.style.display = 'flex';
+  }
+
+  function hideStaySummary() {
+    const card = document.getElementById('staySummaryCard');
+    if (card) card.style.display = 'none';
+  }
+
+  function submitReservation(e) {
+    e.preventDefault();
+    const statusMsg = document.getElementById('statusMessage');
+    statusMsg.textContent = '';
+
+    const checkIn = document.getElementById('checkInDate').value;
+    const checkOut = document.getElementById('checkOutDate').value;
+
+    if (!checkIn || !checkOut) {
+      statusMsg.textContent = "⚠️ Please select both a check-in and check-out date.";
+      statusMsg.style.color = "#b91c1c";
+      return;
+    }
+
+    if (checkOut <= checkIn) {
+      statusMsg.textContent = "⚠️ Check-out date must be after check-in date.";
+      statusMsg.style.color = "#b91c1c";
+      return;
+    }
+
+    if (rangeHasConflict(checkIn, checkOut)) {
+      statusMsg.textContent = "⚠️ Dates conflict with an existing booking. Please pick another date range.";
+      statusMsg.style.color = "#b91c1c";
+      return;
+    }
+
+    const name = document.getElementById('guestName').value.trim();
+    const email = document.getElementById('guestEmail').value.trim();
+    const phone = document.getElementById('guestPhone').value.trim();
+    const guestCount = document.getElementById('guestCount').value;
+
+    if (!name || !email || !phone) {
+      statusMsg.textContent = "⚠️ Please fill in all required contact details.";
+      statusMsg.style.color = "#b91c1c";
+      return;
+    }
+
+    const payload = {
+      startDate: checkIn,
+      endDate: checkOut,
+      guestName: name,
+      guestEmail: email,
+      guestPhone: phone,
+      guestCount: parseInt(guestCount, 10)
+    };
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span>Processing reservation...</span>';
+    announceStatus("Submitting reservation to Google Calendar...");
+
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run
+        .withSuccessHandler(res => {
+          resetSubmitButton();
+          if (res.success) {
+            handleBookingSuccess(res, payload);
+          } else {
+            statusMsg.textContent = `⚠️ ${res.message || "Could not complete reservation."}`;
+            statusMsg.style.color = "#b91c1c";
+          }
+        })
+        .withFailureHandler(err => {
+          resetSubmitButton();
+          statusMsg.textContent = `⚠️ Connection error: ${err.message || err}. Please try again.`;
+          statusMsg.style.color = "#b91c1c";
+        })
+        .processBooking(payload);
+    } else {
+      // Local preview / mock fallback
+      setTimeout(() => {
+        resetSubmitButton();
+        const mockRef = 'LOCAL-' + Math.floor(100000 + Math.random() * 900000);
+        handleBookingSuccess({ success: true, referenceId: mockRef }, payload);
+      }, 500);
+    }
+  }
+
+  function handleBookingSuccess(res, data) {
+    currentReservation = { ...data, referenceId: res.referenceId };
+
+    document.getElementById('bookingForm').style.display = 'none';
+    const confBox = document.getElementById('confirmationBox');
+    confBox.style.display = 'block';
+
+    document.getElementById('confText').innerHTML = 
+      `Thank you, <strong>${escapeHtml(data.guestName)}</strong>! Your reservation for <strong>${escapeHtml(String(data.guestCount))} guest(s)</strong> ` +
+      `from <strong>${data.startDate}</strong> to <strong>${data.endDate}</strong> is confirmed.<br><br>` +
+      `<strong>Reference ID:</strong> #${res.referenceId}<br>` +
+      `A confirmation email has been dispatched to <em>${escapeHtml(data.guestEmail)}</em>.<br>` +
+      `Your stay has been recorded in our Google Calendar.`;
+
+    setupGoogleCalendarLink(res.referenceId);
+    announceStatus(`Reservation confirmed! Your reference ID is ${res.referenceId}.`);
+    confBox.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function resetSubmitButton() {
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span>Confirm and Lock in Reservation</span>';
+    }
+  }
+
+  function toIso(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>'"]/g, 
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+  }
+
+  function setupGoogleCalendarLink(refId) {
+    const inVal = document.getElementById('checkInDate').value;
+    const outVal = document.getElementById('checkOutDate').value;
+    if (!inVal || !outVal) return;
+
+    const s = inVal.replace(/-/g, '');
+    const e = outVal.replace(/-/g, '');
+    const title = encodeURIComponent("Stay at 2-Bedroom Condominium (Ref #" + refId + ")");
+    const details = encodeURIComponent("Condo Reservation Ref #" + refId + "\nCheck-in: 3:00 PM\nCheck-out: 11:00 AM");
+    const loc = encodeURIComponent("418 Serin Tagaytay Condominium");
+
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${s}T150000/${e}T110000&details=${details}&location=${loc}`;
+    const btn = document.getElementById('addToGoogleCalBtn');
+    if (btn) btn.href = url;
+  }
+
+  function downloadIcsFile() {
+    if (!currentReservation) return;
+    const inVal = currentReservation.startDate.replace(/-/g, '');
+    const outVal = currentReservation.endDate.replace(/-/g, '');
+    const ref = currentReservation.referenceId;
+
+    const icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Condo Booking//EN",
+      "BEGIN:VEVENT",
+      `UID:condo-${ref}@booking.local`,
+      `DTSTAMP:${toIso(new Date()).replace(/-/g, '')}T000000Z`,
+      `DTSTART:${inVal}T150000`,
+      `DTEND:${outVal}T110000`,
+      `SUMMARY:Stay at 2-Bedroom Condominium (Ref #${ref})`,
+      `DESCRIPTION:Condominium Reservation Ref #${ref}\\nGuest: ${currentReservation.guestName}\\nGuests: ${currentReservation.guestCount}`,
+      `LOCATION:418 Serin Tagaytay Condominium`,
+      "STATUS:CONFIRMED",
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ].join("\r\n");
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `condo-booking-${ref}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function announceStatus(msg) {
+    const sr = document.getElementById('srAnnouncement');
+    if (sr) sr.textContent = msg;
+  }
+</script>
+
+</body>
+</html>

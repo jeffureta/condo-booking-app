@@ -1,0 +1,18 @@
+{
+  "name": "condo-booking-app",
+  "version": "1.0.0",
+  "description": "Accessible, 100% free condo booking system powered by Google Calendar and Google Apps Script",
+  "main": "Code.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/calendar-embed.test.js"
+  },
+  "keywords": [
+    "google-apps-script",
+    "google-calendar",
+    "booking",
+    "accessibility"
+  ],
+  "author": "jeffureta",
+  "license": "MIT"
+}
