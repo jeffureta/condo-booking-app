@@ -203,3 +203,76 @@ export function buildCalendarFallbackMarkup(calendarId, timeZone = 'Asia/Manila'
   const embedUrl = buildGoogleCalendarEmbedUrl(calendarId, timeZone);
   return `<iframe src="${embedUrl}" style="border: 0; width: 100%; height: 420px; border-radius: 8px;" frameborder="0" scrolling="no" title="Google Calendar Availability Schedule" loading="lazy"></iframe>`;
 }
+
+/**
+ * Escapes unsafe HTML characters to prevent XSS.
+ *
+ * @param {string|any} str - Input value
+ * @returns {string} Sanitized HTML string
+ */
+export function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>'"]/g, 
+    tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+  );
+}
+
+/**
+ * Builds the direct Google Calendar web template link for "Add to Calendar".
+ *
+ * @param {string} refId - Booking reference ID
+ * @param {string} checkInDate - YYYY-MM-DD
+ * @param {string} checkOutDate - YYYY-MM-DD
+ * @returns {string} Google Calendar Add URL
+ */
+export function buildGoogleCalendarTemplateUrl(refId, checkInDate, checkOutDate) {
+  const s = String(checkInDate).replace(/-/g, '');
+  const e = String(checkOutDate).replace(/-/g, '');
+  const title = encodeURIComponent(`Stay at 2-Bedroom Condominium (Ref #${refId})`);
+  const details = encodeURIComponent(`Condo Reservation Ref #${refId}\nCheck-in: 3:00 PM\nCheck-out: 11:00 AM`);
+  const loc = encodeURIComponent("418 Serin Tagaytay Condominium");
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${s}T150000/${e}T110000&details=${details}&location=${loc}`;
+}
+
+/**
+ * Generates RFC 5545 iCalendar (.ics) string.
+ *
+ * @param {Object} reservation - Reservation object
+ * @returns {string} .ics content string
+ */
+export function buildIcsContent(reservation) {
+  const inVal = String(reservation.startDate).replace(/-/g, '');
+  const outVal = String(reservation.endDate).replace(/-/g, '');
+  const ref = reservation.referenceId;
+  const todayIso = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Condo Booking//EN",
+    "BEGIN:VEVENT",
+    `UID:condo-${ref}@booking.local`,
+    `DTSTAMP:${todayIso}T000000Z`,
+    `DTSTART:${inVal}T150000`,
+    `DTEND:${outVal}T110000`,
+    `SUMMARY:Stay at 2-Bedroom Condominium (Ref #${ref})`,
+    `DESCRIPTION:Condominium Reservation Ref #${ref}\\nGuest: ${reservation.guestName}\\nGuests: ${reservation.guestCount}`,
+    `LOCATION:418 Serin Tagaytay Condominium`,
+    "STATUS:CONFIRMED",
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+}
+
+/**
+ * Validates the contact form fields on the client.
+ *
+ * @param {Object} data - Guest form data
+ * @returns {{isValid: boolean, error: string|null}}
+ */
+export function validateGuestFormPayload(data) {
+  if (!data || !data.guestName || !data.guestEmail || !data.guestPhone) {
+    return { isValid: false, error: "Please fill in all required contact details." };
+  }
+  return { isValid: true, error: null };
+}

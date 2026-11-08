@@ -1,4 +1,9 @@
 **/**
 !appsscript.json
 !Code.js
+!Config.js
+!BookingService.js
+!NotificationService.js
 !Index.html
+!Styles.html
+!Scripts.html
