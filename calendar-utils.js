@@ -70,3 +70,111 @@ export function validateBookingDates(checkIn, checkOut, todayIso) {
   }
   return { isValid: true, error: null };
 }
+
+/**
+ * Formats calendar event fields (summary, timestamps, description) for Google Calendar creation.
+ * Check-in defaults to 15:00 and check-out defaults to 11:00.
+ *
+ * @param {Object} bookingData
+ * @param {string} bookingData.startDate - YYYY-MM-DD
+ * @param {string} bookingData.endDate - YYYY-MM-DD
+ * @param {string} bookingData.guestName
+ * @param {string|number} bookingData.guestCount
+ * @param {string} [bookingData.guestEmail]
+ * @param {string} [bookingData.guestPhone]
+ * @param {string} refId - Booking reference identifier
+ * @param {string} [tzOffset='+08:00'] - ISO timezone offset (default Manila UTC+8)
+ * @returns {{summary: string, startRfc3339: string, endRfc3339: string, description: string}}
+ */
+export function formatCalendarEventPayload(bookingData, refId, tzOffset = '+08:00') {
+  const summary = `Booking: ${bookingData.guestName} (${bookingData.guestCount} guests) - Ref #${refId}`;
+  const startRfc3339 = `${bookingData.startDate}T15:00:00${tzOffset}`;
+  const endRfc3339 = `${bookingData.endDate}T11:00:00${tzOffset}`;
+
+  const descriptionLines = [
+    `Guest Name: ${bookingData.guestName}`,
+    `Email: ${bookingData.guestEmail || 'N/A'}`,
+    `Phone: ${bookingData.guestPhone || 'N/A'}`,
+    `Guests: ${bookingData.guestCount}`,
+    `Booking Reference: ${refId}`,
+    `Check-in: ${bookingData.startDate}`,
+    `Check-out: ${bookingData.endDate}`,
+    `Status: Confirmed`
+  ];
+
+  return {
+    summary,
+    startRfc3339,
+    endRfc3339,
+    description: descriptionLines.join('\n')
+  };
+}
+
+/**
+ * Converts backend bookedRanges [{from, to, title}] into FullCalendar event objects.
+ * FullCalendar all-day events use exclusive end dates.
+ *
+ * @param {Array<{from: string, to: string, title?: string}>} bookedRanges
+ * @returns {Array<Object>}
+ */
+export function mapBookingsToFullCalendarEvents(bookedRanges = []) {
+  if (!bookedRanges || !Array.isArray(bookedRanges)) return [];
+  return bookedRanges.map(r => ({
+    id: `booking-${r.from}`,
+    start: r.from,
+    end: r.to,
+    title: 'Booked',
+    display: 'block',
+    overlap: false,
+    backgroundColor: '#94a3b8',
+    borderColor: '#64748b',
+    textColor: '#ffffff',
+    classNames: ['fc-booked-event'],
+    extendedProps: {
+      isBooked: true,
+      originalTitle: r.title || 'Reserved'
+    }
+  }));
+}
+
+/**
+ * Extracts and calculates checkIn, checkOut, and nights from a FullCalendar selection info object.
+ *
+ * @param {{startStr: string, endStr: string}} selectInfo
+ * @returns {{checkIn: string, checkOut: string, nights: number}}
+ */
+export function parseFullCalendarSelection(selectInfo) {
+  if (!selectInfo || !selectInfo.startStr || !selectInfo.endStr) {
+    return { checkIn: '', checkOut: '', nights: 0 };
+  }
+  const checkIn = selectInfo.startStr.split('T')[0];
+  const checkOut = selectInfo.endStr.split('T')[0];
+
+  const startDate = new Date(checkIn);
+  const endDate = new Date(checkOut);
+  const diffTime = endDate.getTime() - startDate.getTime();
+  const nights = Math.max(0, Math.round(diffTime / (1000 * 60 * 60 * 24)));
+
+  return { checkIn, checkOut, nights };
+}
+
+/**
+ * Validates whether an interactive FullCalendar selection is allowed.
+ * Blocks past dates and conflicts with existing bookings.
+ *
+ * @param {{startStr: string, endStr: string}} selectInfo
+ * @param {Array<{from: string, to: string}>} bookedRanges
+ * @param {string} todayIso
+ * @returns {boolean}
+ */
+export function isSelectionAllowed(selectInfo, bookedRanges = [], todayIso = new Date().toISOString().slice(0, 10)) {
+  const { checkIn, checkOut } = parseFullCalendarSelection(selectInfo);
+  if (!checkIn || !checkOut || checkOut <= checkIn) {
+    return false;
+  }
+  if (checkIn < todayIso) {
+    return false;
+  }
+  // Check overlap with booked ranges: overlap if checkIn < r.to and checkOut > r.from
+  return !hasBookingConflict(checkIn, checkOut, bookedRanges);
+}

@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Condo Booking & Availability</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FullCalendar 6 Standard Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <style>
     :root {
       --primary: #1d4ed8;
@@ -152,51 +154,93 @@
       margin-top: 6px;
     }
 
-    /* Google Calendar Embed Container */
-    .gcal-embed-card {
+    /* FullCalendar Interactive Container */
+    .fc-calendar-card {
       background: #ffffff;
       border: 1.5px solid var(--border);
       border-radius: 12px;
       overflow: hidden;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      padding: 16px;
     }
 
-    .gcal-toolbar {
+    .fc-toolbar-legend {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px;
-      background: #f8fafc;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
       border-bottom: 1px solid var(--border);
       font-size: 13px;
-      font-weight: 600;
+    }
+
+    .fc-legend-items {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
       color: var(--text-muted);
     }
 
-    .gcal-direct-link {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
+    .legend-item {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-    }
-    .gcal-direct-link:hover {
-      text-decoration: underline;
+      gap: 6px;
     }
 
-    .gcal-iframe-wrapper {
-      position: relative;
-      width: 100%;
-      height: 380px;
-      background: #f1f5f9;
+    .legend-badge {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+    .badge-available { background: #ffffff; border: 1px solid #cbd5e1; }
+    .badge-booked { background: #94a3b8; }
+    .badge-selected { background: var(--primary); }
+
+    #calendarContainer {
+      min-height: 420px;
     }
 
-    .gcal-iframe-wrapper iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
-      display: block;
+    /* FullCalendar Theme Refinements */
+    .fc .fc-toolbar-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .fc .fc-button-primary {
+      background-color: #ffffff;
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-weight: 600;
+      padding: 4px 10px;
+      box-shadow: none;
+    }
+    .fc .fc-button-primary:hover,
+    .fc .fc-button-primary:focus {
+      background-color: #f1f5f9;
+      color: var(--text);
+      border-color: #94a3b8;
+      box-shadow: none;
+    }
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+      background-color: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .fc .fc-daygrid-day.fc-day-today {
+      background-color: #eff6ff !important;
+    }
+    .fc .fc-highlight {
+      background: rgba(29, 78, 216, 0.22) !important;
+    }
+    .fc .fc-booked-event {
+      cursor: not-allowed;
+      font-weight: 600;
+      font-size: 0.8rem;
     }
 
     .stay-summary-card {
@@ -332,24 +376,21 @@
     <form id="bookingForm" onsubmit="submitReservation(event)" novalidate>
       <div class="form-group">
         <label id="calendarLabel">
-          Live Calendar & Availability (418 Serin Tagaytay)
+          Interactive Availability Calendar (Select Dates or Drag to Book)
         </label>
         
-        <div class="gcal-embed-card">
-          <div class="gcal-toolbar">
-            <span>📅 Real-time Google Calendar Schedule</span>
+        <div class="fc-calendar-card" aria-labelledby="calendarLabel">
+          <div class="fc-toolbar-legend">
+            <div class="fc-legend-items" aria-hidden="true">
+              <span class="legend-item"><span class="legend-badge badge-available"></span> Available</span>
+              <span class="legend-item"><span class="legend-badge badge-booked"></span> Booked / Occupied</span>
+              <span class="legend-item"><span class="legend-badge badge-selected"></span> Selected Stay</span>
+            </div>
             <a id="openGCalDirectLink" class="gcal-direct-link" target="_blank" rel="noopener noreferrer" href="https://calendar.google.com/calendar/u/0/r?cid=NWUyNTA0MThmOTdkMjAwOGJmZjkzY2MxMGE2MzhiMmFhYmU5ODFhZjJkNWUyNzFiMDU4ZWI4ODM1ZGRlMmFlMkBncm91cC5jYWxlbmRhci5nb29nbGUuY29t">
-              Open in Google Calendar ↗
+              Google Calendar ↗
             </a>
           </div>
-          <div class="gcal-iframe-wrapper">
-            <iframe 
-              id="gcalEmbedIframe"
-              title="Condo Booking Availability Google Calendar"
-              src="https://calendar.google.com/calendar/embed?src=5e250418f97d2008bff93cc10a638b2aabe981af2d5e271b058eb8835dde2ae2%40group.calendar.google.com&ctz=Asia%2FManila&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&showTz=1&mode=MONTH"
-              loading="lazy">
-            </iframe>
-          </div>
+          <div id="calendarContainer" aria-label="Interactive Booking Calendar Grid"></div>
         </div>
       </div>
 
@@ -483,6 +524,8 @@
   const CALENDAR_ID = '5e250418f97d2008bff93cc10a638b2aabe981af2d5e271b058eb8835dde2ae2@group.calendar.google.com';
   let currentReservation = null;
   let currentBookedRanges = [];
+  let fullCalendarInstance = null;
+  let isInternalCalendarSync = false;
 
   const todayStr = toIso(new Date());
 
@@ -493,6 +536,8 @@
     if (inInput) inInput.min = todayStr;
     if (outInput) outInput.min = todayStr;
 
+    initFullCalendar();
+
     announceStatus("Fetching Google Calendar availability...");
     if (typeof google !== 'undefined' && google.script && google.script.run) {
       google.script.run
@@ -502,13 +547,87 @@
         })
         .getBookedRanges();
     } else {
-      onBookedRangesLoaded([]);
+      // Local preview fallback mock
+      onBookedRangesLoaded([
+        { from: '2026-11-10', to: '2026-11-11', title: 'Existing Reservation' }
+      ]);
     }
   });
+
+  function initFullCalendar() {
+    const calendarEl = document.getElementById('calendarContainer');
+    if (!calendarEl || typeof FullCalendar === 'undefined') return;
+
+    fullCalendarInstance = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: ''
+      },
+      selectable: true,
+      selectMirror: true,
+      unselectAuto: false,
+      selectOverlap: false,
+      longPressDelay: 250,
+      selectAllow: function(selectInfo) {
+        const start = selectInfo.startStr.split('T')[0];
+        const end = selectInfo.endStr.split('T')[0];
+        if (start < todayStr) return false;
+        if (end <= start) return false;
+        return !rangeHasConflict(start, end);
+      },
+      select: function(selectInfo) {
+        if (isInternalCalendarSync) return;
+        isInternalCalendarSync = true;
+        const checkIn = selectInfo.startStr.split('T')[0];
+        const checkOut = selectInfo.endStr.split('T')[0];
+
+        const inInput = document.getElementById('checkInDate');
+        const outInput = document.getElementById('checkOutDate');
+        if (inInput) inInput.value = checkIn;
+        if (outInput) {
+          outInput.value = checkOut;
+          outInput.min = checkIn;
+        }
+
+        document.getElementById('statusMessage').textContent = '';
+        updateStaySummary(new Date(checkIn + 'T00:00:00'), new Date(checkOut + 'T00:00:00'));
+        announceStatus(`Selected check-in: ${checkIn}, check-out: ${checkOut}`);
+        isInternalCalendarSync = false;
+      },
+      events: []
+    });
+
+    fullCalendarInstance.render();
+  }
 
   function onBookedRangesLoaded(ranges) {
     currentBookedRanges = ranges || [];
     announceStatus("Google Calendar availability updated.");
+
+    if (fullCalendarInstance) {
+      // Clear existing events and load booked ranges
+      fullCalendarInstance.removeAllEvents();
+      currentBookedRanges.forEach(r => {
+        fullCalendarInstance.addEvent({
+          id: `booking-${r.from}`,
+          start: r.from,
+          end: r.to,
+          title: 'Booked',
+          display: 'block',
+          overlap: false,
+          backgroundColor: '#94a3b8',
+          borderColor: '#64748b',
+          textColor: '#ffffff',
+          classNames: ['fc-booked-event'],
+          extendedProps: {
+            isBooked: true,
+            originalTitle: r.title || 'Reserved'
+          }
+        });
+      });
+    }
   }
 
   function onDateInputChange() {
@@ -525,20 +644,32 @@
         document.getElementById('statusMessage').textContent = "⚠️ Check-out date must be after check-in date.";
         document.getElementById('statusMessage').style.color = "#b91c1c";
         hideStaySummary();
+        if (fullCalendarInstance && !isInternalCalendarSync) fullCalendarInstance.unselect();
         return;
       }
       if (rangeHasConflict(inVal, outVal)) {
         document.getElementById('statusMessage').textContent = "⚠️ Selected range overlaps with an existing reservation on Google Calendar.";
         document.getElementById('statusMessage').style.color = "#b91c1c";
         hideStaySummary();
+        if (fullCalendarInstance && !isInternalCalendarSync) fullCalendarInstance.unselect();
         return;
       }
 
       document.getElementById('statusMessage').textContent = "";
       updateStaySummary(new Date(inVal + 'T00:00:00'), new Date(outVal + 'T00:00:00'));
       announceStatus(`Selected check-in: ${inVal}, check-out: ${outVal}`);
+
+      // Sync selection to FullCalendar
+      if (fullCalendarInstance && !isInternalCalendarSync) {
+        isInternalCalendarSync = true;
+        fullCalendarInstance.select(inVal, outVal);
+        isInternalCalendarSync = false;
+      }
     } else {
       hideStaySummary();
+      if (fullCalendarInstance && !isInternalCalendarSync) {
+        fullCalendarInstance.unselect();
+      }
     }
   }
 
