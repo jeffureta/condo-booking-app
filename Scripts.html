@@ -4,30 +4,30 @@
    * Manages bespoke zero-dependency calendar grid rendering, interactive drag/click selection,
    * form validation, and Google Apps Script backend submissions.
    */
-  const CALENDAR_ID = '5e250418f97d2008bff93cc10a638b2aabe981af2d5e271b058eb8835dde2ae2@group.calendar.google.com';
-  let currentReservation = null;
-  let currentBookedRanges = [];
-  let isInternalCalendarSync = false;
+  var CALENDAR_ID = '5e250418f97d2008bff93cc10a638b2aabe981af2d5e271b058eb8835dde2ae2@group.calendar.google.com';
+  var currentReservation = null;
+  var currentBookedRanges = [];
+  var isInternalCalendarSync = false;
 
   // Calendar Grid State
-  let currentDisplayDate = new Date(); // Tracks currently displayed month/year
-  let selectionAnchor = null;         // Start date of drag or first click (YYYY-MM-DD)
-  let selectionHover = null;          // Currently hovered date during drag (YYYY-MM-DD)
-  let isDragging = false;             // True while mouse button is held down
+  var currentDisplayDate = new Date(); // Tracks currently displayed month/year
+  var selectionAnchor = null;         // Start date of drag or first click (YYYY-MM-DD)
+  var selectionHover = null;          // Currently hovered date during drag (YYYY-MM-DD)
+  var isDragging = false;             // True while mouse button is held down
 
   function toIso(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
   }
 
-  const todayStr = toIso(new Date());
+  var todayStr = toIso(new Date());
 
   function bootstrapApp() {
     // Set min date on date inputs to today
-    const inInput = document.getElementById('checkInDate');
-    const outInput = document.getElementById('checkOutDate');
+    var inInput = document.getElementById('checkInDate');
+    var outInput = document.getElementById('checkOutDate');
     if (inInput) inInput.min = todayStr;
     if (outInput) outInput.min = todayStr;
 
@@ -52,7 +52,7 @@
   }
 
   function retryFetchAvailability() {
-    const retryBtn = document.getElementById('calendarRetryBtn');
+    var retryBtn = document.getElementById('calendarRetryBtn');
     if (retryBtn) {
       retryBtn.disabled = true;
       retryBtn.textContent = 'Retrying...';
@@ -62,14 +62,14 @@
 
   function showCalendarError(err) {
     console.error('[CondoCalendar] Failed to load calendar availability:', err);
-    const banner = document.getElementById('calendarErrorBanner');
-    const msgEl = document.getElementById('calendarErrorMessage');
-    const retryBtn = document.getElementById('calendarRetryBtn');
+    var banner = document.getElementById('calendarErrorBanner');
+    var msgEl = document.getElementById('calendarErrorMessage');
+    var retryBtn = document.getElementById('calendarRetryBtn');
 
     if (banner && msgEl) {
-      const detail = err && (err.message || (typeof err === 'string' ? err : ''));
+      var detail = err && (err.message || (typeof err === 'string' ? err : ''));
       msgEl.textContent = detail 
-        ? `Unable to load dates: ${detail}. Please check your connection and retry.`
+        ? 'Unable to load dates: ' + detail + '. Please check your connection and retry.'
         : 'Unable to load dates from Google Calendar. Please click Retry.';
       banner.style.display = 'flex';
     }
@@ -81,11 +81,11 @@
   }
 
   function hideCalendarError() {
-    const banner = document.getElementById('calendarErrorBanner');
+    var banner = document.getElementById('calendarErrorBanner');
     if (banner) {
       banner.style.display = 'none';
     }
-    const retryBtn = document.getElementById('calendarRetryBtn');
+    var retryBtn = document.getElementById('calendarRetryBtn');
     if (retryBtn) {
       retryBtn.disabled = false;
       retryBtn.textContent = 'Retry';
@@ -106,25 +106,25 @@
   }
 
   function initCustomCalendar() {
-    const prevBtn = document.getElementById('calPrevBtn');
-    const nextBtn = document.getElementById('calNextBtn');
+    var prevBtn = document.getElementById('calPrevBtn');
+    var nextBtn = document.getElementById('calNextBtn');
 
     if (prevBtn) {
-      prevBtn.addEventListener('click', () => {
+      prevBtn.addEventListener('click', function() {
         currentDisplayDate.setMonth(currentDisplayDate.getMonth() - 1);
         renderCalendar();
       });
     }
 
     if (nextBtn) {
-      nextBtn.addEventListener('click', () => {
+      nextBtn.addEventListener('click', function() {
         currentDisplayDate.setMonth(currentDisplayDate.getMonth() + 1);
         renderCalendar();
       });
     }
 
     // Global mouseup to guarantee drag ends even if cursor releases outside grid
-    window.addEventListener('mouseup', () => {
+    window.addEventListener('mouseup', function() {
       if (isDragging) {
         finalizeSelection();
       }
@@ -135,41 +135,41 @@
 
   function renderCalendar() {
     try {
-      const gridEl = document.getElementById('customCalendarGrid');
-      const titleEl = document.getElementById('calMonthTitle');
+      var gridEl = document.getElementById('customCalendarGrid');
+      var titleEl = document.getElementById('calMonthTitle');
       if (!gridEl || !titleEl) return;
 
-      const year = currentDisplayDate.getFullYear();
-      const month = currentDisplayDate.getMonth();
+      var year = currentDisplayDate.getFullYear();
+      var month = currentDisplayDate.getMonth();
 
       // Update Header (e.g., "November 2026")
-      const monthName = currentDisplayDate.toLocaleString('default', { month: 'long' });
-      titleEl.textContent = `${monthName} ${year}`;
+      var monthName = currentDisplayDate.toLocaleString('default', { month: 'long' });
+      titleEl.textContent = monthName + ' ' + year;
 
       gridEl.innerHTML = '';
 
       // Calculate first day of month and grid start
-      const firstDay = new Date(year, month, 1);
-      const startDayOfWeek = firstDay.getDay(); // 0 = Sunday
-      const startDate = new Date(year, month, 1 - startDayOfWeek);
+      var firstDay = new Date(year, month, 1);
+      var startDayOfWeek = firstDay.getDay(); // 0 = Sunday
+      var startDate = new Date(year, month, 1 - startDayOfWeek);
 
-      const inVal = document.getElementById('checkInDate').value;
-      const outVal = document.getElementById('checkOutDate').value;
+      var inVal = document.getElementById('checkInDate').value;
+      var outVal = document.getElementById('checkOutDate').value;
 
-      for (let i = 0; i < 42; i++) {
-        const cellDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
-        const iso = toIso(cellDate);
-        const dayNum = cellDate.getDate();
-        const isCurrentMonth = cellDate.getMonth() === month;
+      for (var i = 0; i < 42; i++) {
+        var cellDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
+        var iso = toIso(cellDate);
+        var dayNum = cellDate.getDate();
+        var isCurrentMonth = cellDate.getMonth() === month;
 
-        const cell = document.createElement('div');
+        var cell = document.createElement('div');
         cell.className = 'cal-cell';
         cell.dataset.date = iso;
         cell.setAttribute('role', 'gridcell');
         cell.setAttribute('tabindex', '0');
-        cell.setAttribute('aria-label', `${iso}`);
+        cell.setAttribute('aria-label', iso);
 
-        const numSpan = document.createElement('span');
+        var numSpan = document.createElement('span');
         numSpan.textContent = dayNum;
         cell.appendChild(numSpan);
 
@@ -188,7 +188,9 @@
         }
 
         // Check if date is booked (turnover on checkout day is allowed for check-in)
-        const isOccupied = currentBookedRanges.some(r => iso >= r.from && iso < r.to);
+        var isOccupied = currentBookedRanges.some(function(r) {
+          return iso >= r.from && iso < r.to;
+        });
         if (isOccupied) {
           cell.classList.add('cal-booked');
           cell.setAttribute('aria-disabled', 'true');
@@ -209,8 +211,8 @@
   }
 
   function applyCellSelectionClasses(cell, iso, inVal, outVal) {
-    let activeStart = inVal;
-    let activeEnd = outVal;
+    var activeStart = inVal;
+    var activeEnd = outVal;
 
     // If currently dragging, preview the dynamic range
     if (isDragging && selectionAnchor && selectionHover) {
@@ -239,11 +241,13 @@
   }
 
   function attachCellEvents(cell, iso) {
-    const isPast = iso < todayStr;
-    const isOccupied = currentBookedRanges.some(r => iso >= r.from && iso < r.to);
+    var isPast = iso < todayStr;
+    var isOccupied = currentBookedRanges.some(function(r) {
+      return iso >= r.from && iso < r.to;
+    });
 
     // MOUSE DOWN: start selection or drag
-    cell.addEventListener('mousedown', (e) => {
+    cell.addEventListener('mousedown', function(e) {
       e.preventDefault();
       if (isPast || isOccupied) return;
 
@@ -254,14 +258,14 @@
     });
 
     // MOUSE ENTER: update range while dragging
-    cell.addEventListener('mouseenter', () => {
+    cell.addEventListener('mouseenter', function() {
       if (!isDragging || !selectionAnchor) return;
       selectionHover = iso;
       highlightPreviewRange(selectionAnchor, selectionHover);
     });
 
     // TOUCH SUPPORT
-    cell.addEventListener('touchstart', (e) => {
+    cell.addEventListener('touchstart', function(e) {
       if (isPast || isOccupied) return;
       isDragging = true;
       selectionAnchor = iso;
@@ -269,25 +273,25 @@
       highlightPreviewRange(selectionAnchor, selectionHover);
     }, { passive: true });
 
-    cell.addEventListener('touchmove', (e) => {
+    cell.addEventListener('touchmove', function(e) {
       if (!isDragging) return;
-      const touch = e.touches[0];
-      const target = document.elementFromPoint(touch.clientX, touch.clientY);
-      const cellTarget = target ? target.closest('.cal-cell') : null;
+      var touch = e.touches[0];
+      var target = document.elementFromPoint(touch.clientX, touch.clientY);
+      var cellTarget = target ? target.closest('.cal-cell') : null;
       if (cellTarget && cellTarget.dataset.date) {
         selectionHover = cellTarget.dataset.date;
         highlightPreviewRange(selectionAnchor, selectionHover);
       }
     }, { passive: true });
 
-    cell.addEventListener('touchend', () => {
+    cell.addEventListener('touchend', function() {
       if (isDragging) {
         finalizeSelection();
       }
     });
 
     // KEYBOARD ACCESSIBILITY: Enter / Space to pick date
-    cell.addEventListener('keydown', (e) => {
+    cell.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         if (isPast || isOccupied) return;
@@ -298,11 +302,13 @@
 
   function highlightPreviewRange(anchor, hover) {
     if (!anchor || !hover) return;
-    const [start, end] = anchor <= hover ? [anchor, hover] : [hover, anchor];
+    var range = anchor <= hover ? [anchor, hover] : [hover, anchor];
+    var start = range[0];
+    var end = range[1];
 
-    const allCells = document.querySelectorAll('.cal-cell');
-    allCells.forEach(c => {
-      const d = c.dataset.date;
+    var allCells = document.querySelectorAll('.cal-cell');
+    allCells.forEach(function(c) {
+      var d = c.dataset.date;
       c.classList.remove('cal-selected-start', 'cal-selected-end', 'cal-in-range', 'cal-selected-single');
       if (start === end) {
         if (d === start) c.classList.add('cal-selected-single');
@@ -318,8 +324,8 @@
     isDragging = false;
     if (!selectionAnchor || !selectionHover) return;
 
-    let checkIn = selectionAnchor;
-    let checkOut = selectionHover;
+    var checkIn = selectionAnchor;
+    var checkOut = selectionHover;
 
     if (selectionAnchor > selectionHover) {
       checkIn = selectionHover;
@@ -338,8 +344,8 @@
   }
 
   function handleCellClick(iso) {
-    const inInput = document.getElementById('checkInDate');
-    const outInput = document.getElementById('checkOutDate');
+    var inInput = document.getElementById('checkInDate');
+    var outInput = document.getElementById('checkOutDate');
 
     if (!inInput.value || (inInput.value && outInput.value)) {
       // First click: set check-in
@@ -348,10 +354,10 @@
       outInput.min = iso;
       hideStaySummary();
       renderCalendar();
-      announceStatus(`Selected check-in date: ${iso}. Now select check-out date.`);
+      announceStatus('Selected check-in date: ' + iso + '. Now select check-out date.');
     } else {
       // Second click: set check-out
-      const existingIn = inInput.value;
+      var existingIn = inInput.value;
       if (iso <= existingIn) {
         // If clicked date is earlier, treat it as new check-in date
         inInput.value = iso;
@@ -359,7 +365,7 @@
         outInput.min = iso;
         hideStaySummary();
         renderCalendar();
-        announceStatus(`Updated check-in date: ${iso}. Now select check-out date.`);
+        announceStatus('Updated check-in date: ' + iso + '. Now select check-out date.');
       } else {
         applyConfirmedDateRange(existingIn, iso);
       }
@@ -367,9 +373,9 @@
   }
 
   function applyConfirmedDateRange(checkIn, checkOut) {
-    const statusMsg = document.getElementById('statusMessage');
-    const inInput = document.getElementById('checkInDate');
-    const outInput = document.getElementById('checkOutDate');
+    var statusMsg = document.getElementById('statusMessage');
+    var inInput = document.getElementById('checkInDate');
+    var outInput = document.getElementById('checkOutDate');
 
     if (checkIn < todayStr) {
       statusMsg.textContent = "⚠️ Check-in date cannot be in the past.";
@@ -392,7 +398,7 @@
     isInternalCalendarSync = false;
 
     updateStaySummary(new Date(checkIn + 'T00:00:00'), new Date(checkOut + 'T00:00:00'));
-    announceStatus(`Selected check-in: ${checkIn}, check-out: ${checkOut}`);
+    announceStatus('Selected check-in: ' + checkIn + ', check-out: ' + checkOut);
     renderCalendar();
   }
 
@@ -404,9 +410,9 @@
   }
 
   function onDateInputChange() {
-    const inVal = document.getElementById('checkInDate').value;
-    const outVal = document.getElementById('checkOutDate').value;
-    const outInput = document.getElementById('checkOutDate');
+    var inVal = document.getElementById('checkInDate').value;
+    var outVal = document.getElementById('checkOutDate').value;
+    var outInput = document.getElementById('checkOutDate');
 
     if (inVal && outInput) {
       outInput.min = inVal;
@@ -430,7 +436,7 @@
 
       document.getElementById('statusMessage').textContent = "";
       updateStaySummary(new Date(inVal + 'T00:00:00'), new Date(outVal + 'T00:00:00'));
-      announceStatus(`Selected check-in: ${inVal}, check-out: ${outVal}`);
+      announceStatus('Selected check-in: ' + inVal + ', check-out: ' + outVal);
       renderCalendar();
     } else {
       hideStaySummary();
@@ -439,38 +445,40 @@
   }
 
   function rangeHasConflict(start, end) {
-    return currentBookedRanges.some(r => start < r.to && end > r.from);
+    return currentBookedRanges.some(function(r) {
+      return start < r.to && end > r.from;
+    });
   }
 
   function updateStaySummary(startDate, endDate) {
-    const card = document.getElementById('staySummaryCard');
-    const inEl = document.getElementById('summaryCheckIn');
-    const outEl = document.getElementById('summaryCheckOut');
-    const nightsEl = document.getElementById('summaryNights');
+    var card = document.getElementById('staySummaryCard');
+    var inEl = document.getElementById('summaryCheckIn');
+    var outEl = document.getElementById('summaryCheckOut');
+    var nightsEl = document.getElementById('summaryNights');
 
-    const opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+    var opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
     inEl.textContent = startDate.toLocaleDateString(undefined, opts);
     outEl.textContent = endDate.toLocaleDateString(undefined, opts);
 
-    const diffTime = Math.abs(endDate - startDate);
-    const nights = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    nightsEl.textContent = nights === 1 ? '1 night' : `${nights} nights`;
+    var diffTime = Math.abs(endDate - startDate);
+    var nights = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    nightsEl.textContent = nights === 1 ? '1 night' : (nights + ' nights');
 
     card.style.display = 'flex';
   }
 
   function hideStaySummary() {
-    const card = document.getElementById('staySummaryCard');
+    var card = document.getElementById('staySummaryCard');
     if (card) card.style.display = 'none';
   }
 
   function submitReservation(e) {
     e.preventDefault();
-    const statusMsg = document.getElementById('statusMessage');
+    var statusMsg = document.getElementById('statusMessage');
     statusMsg.textContent = '';
 
-    const checkIn = document.getElementById('checkInDate').value;
-    const checkOut = document.getElementById('checkOutDate').value;
+    var checkIn = document.getElementById('checkInDate').value;
+    var checkOut = document.getElementById('checkOutDate').value;
 
     if (!checkIn || !checkOut) {
       statusMsg.textContent = "⚠️ Please select both a check-in and check-out date.";
@@ -490,10 +498,10 @@
       return;
     }
 
-    const name = document.getElementById('guestName').value.trim();
-    const email = document.getElementById('guestEmail').value.trim();
-    const phone = document.getElementById('guestPhone').value.trim();
-    const guestCount = document.getElementById('guestCount').value;
+    var name = document.getElementById('guestName').value.trim();
+    var email = document.getElementById('guestEmail').value.trim();
+    var phone = document.getElementById('guestPhone').value.trim();
+    var guestCount = document.getElementById('guestCount').value;
 
     if (!name || !email || !phone) {
       statusMsg.textContent = "⚠️ Please fill in all required contact details.";
@@ -501,7 +509,7 @@
       return;
     }
 
-    const payload = {
+    var payload = {
       startDate: checkIn,
       endDate: checkOut,
       guestName: name,
@@ -510,7 +518,7 @@
       guestCount: parseInt(guestCount, 10)
     };
 
-    const submitBtn = document.getElementById('submitBtn');
+    var submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span>Processing reservation...</span>';
     announceStatus("Submitting reservation to Google Calendar...");
@@ -518,53 +526,61 @@
     if (typeof google !== 'undefined' && google.script && google.script.run) {
       // Calls createBooking (and processBooking alias is also available on backend)
       google.script.run
-        .withSuccessHandler(res => {
+        .withSuccessHandler(function(res) {
           resetSubmitButton();
           if (res.success) {
             handleBookingSuccess(res, payload);
           } else {
-            statusMsg.textContent = `⚠️ ${res.message || "Could not complete reservation."}`;
+            statusMsg.textContent = '⚠️ ' + (res.message || "Could not complete reservation.");
             statusMsg.style.color = "#b91c1c";
           }
         })
-        .withFailureHandler(err => {
+        .withFailureHandler(function(err) {
           resetSubmitButton();
-          statusMsg.textContent = `⚠️ Connection error: ${err.message || err}. Please try again.`;
+          statusMsg.textContent = '⚠️ Connection error: ' + (err.message || err) + '. Please try again.';
           statusMsg.style.color = "#b91c1c";
         })
         .createBooking(payload);
     } else {
       // Local preview / mock fallback
-      setTimeout(() => {
+      setTimeout(function() {
         resetSubmitButton();
-        const mockRef = 'LOCAL-' + Math.floor(100000 + Math.random() * 900000);
+        var mockRef = 'LOCAL-' + Math.floor(100000 + Math.random() * 900000);
         handleBookingSuccess({ success: true, referenceId: mockRef }, payload);
       }, 500);
     }
   }
 
   function handleBookingSuccess(res, data) {
-    const ref = res.referenceId || res.refId;
-    currentReservation = { ...data, referenceId: ref };
+    var ref = res.referenceId || res.refId;
+    currentReservation = {
+      startDate: data.startDate,
+      endDate: data.endDate,
+      guestName: data.guestName,
+      guestEmail: data.guestEmail,
+      guestPhone: data.guestPhone,
+      guestCount: data.guestCount,
+      referenceId: ref
+    };
 
     document.getElementById('bookingForm').style.display = 'none';
-    const confBox = document.getElementById('confirmationBox');
+    var confBox = document.getElementById('confirmationBox');
     confBox.style.display = 'block';
 
     document.getElementById('confText').innerHTML = 
-      `Thank you, <strong>${escapeHtml(data.guestName)}</strong>! Your reservation for <strong>${escapeHtml(String(data.guestCount))} guest(s)</strong> ` +
-      `from <strong>${data.startDate}</strong> to <strong>${data.endDate}</strong> is confirmed.<br><br>` +
-      `<strong>Reference ID:</strong> #${ref}<br>` +
-      `A confirmation email has been dispatched to <em>${escapeHtml(data.guestEmail)}</em>.<br>` +
-      `Your stay has been recorded in our Google Calendar.`;
+      'Thank you, <strong>' + escapeHtml(data.guestName) + '</strong>! Your reservation for <strong>' + escapeHtml(String(data.guestCount)) + ' guest(s)</strong> ' +
+      'from <strong>' + data.startDate + '</strong> to <strong>' + data.endDate + '</strong> is confirmed.<br><br>' +
+      '<strong>Reference ID:</strong> #' + ref + '<br>' +
+      'A confirmation email has been dispatched to <em>' + escapeHtml(data.guestEmail) + '</em>.<br>' +
+      'Your stay has been recorded in our Google Calendar.';
 
     setupGoogleCalendarLink(ref);
-    announceStatus(`Reservation confirmed! Your reference ID is ${ref}.`);
+    announceStatus('Reservation confirmed! Your reference ID is ' + ref + '.');
     confBox.scrollIntoView({ behavior: 'smooth' });
   }
 
   function resetSubmitButton() {
-    const submitBtn = document.getElementById('submitBtn');
+    var submitBtn = document.getElementById('submitBtn');
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<span>Confirm and Lock in Reservation</span>';
@@ -572,61 +588,64 @@
   }
 
   function escapeHtml(str) {
-    return String(str).replace(/[&<>'"]/g, 
-      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-    );
+    return String(str).replace(/[&<>'"]/g, function(tag) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag;
+    });
   }
 
   function setupGoogleCalendarLink(refId) {
-    const inVal = document.getElementById('checkInDate').value;
-    const outVal = document.getElementById('checkOutDate').value;
+    var inVal = document.getElementById('checkInDate').value;
+    var outVal = document.getElementById('checkOutDate').value;
     if (!inVal || !outVal) return;
 
-    const s = inVal.replace(/-/g, '');
-    const e = outVal.replace(/-/g, '');
-    const title = encodeURIComponent("Stay at 2-Bedroom Condominium (Ref #" + refId + ")");
-    const details = encodeURIComponent("Condo Reservation Ref #" + refId + "\nCheck-in: 3:00 PM\nCheck-out: 11:00 AM");
-    const loc = encodeURIComponent("418 Serin Tagaytay Condominium");
+    var s = inVal.replace(/-/g, '');
+    var e = outVal.replace(/-/g, '');
+    var title = encodeURIComponent("Stay at 2-Bedroom Condominium (Ref #" + refId + ")");
+    var details = encodeURIComponent("Condo Reservation Ref #" + refId + "\nCheck-in: 3:00 PM\nCheck-out: 11:00 AM");
+    var loc = encodeURIComponent("418 Serin Tagaytay Condominium");
 
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${s}T150000/${e}T110000&details=${details}&location=${loc}`;
-    const btn = document.getElementById('addToGoogleCalBtn');
+    // Construct protocol safely to avoid ES5 comment-stripping hazards
+    var proto = 'https:' + '//';
+    var url = proto + 'calendar.google.com/calendar/render?action=TEMPLATE&text=' + title + '&dates=' + s + 'T150000/' + e + 'T110000&details=' + details + '&location=' + loc;
+    var btn = document.getElementById('addToGoogleCalBtn');
     if (btn) btn.href = url;
   }
 
   function downloadIcsFile() {
     if (!currentReservation) return;
-    const inVal = currentReservation.startDate.replace(/-/g, '');
-    const outVal = currentReservation.endDate.replace(/-/g, '');
-    const ref = currentReservation.referenceId;
+    var inVal = currentReservation.startDate.replace(/-/g, '');
+    var outVal = currentReservation.endDate.replace(/-/g, '');
+    var ref = currentReservation.referenceId;
+    var slashSlash = '/' + '/';
 
-    const icsContent = [
+    var icsContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//Condo Booking//EN",
+      "PRODID:-" + slashSlash + "Condo Booking" + slashSlash + "EN",
       "BEGIN:VEVENT",
-      `UID:condo-${ref}@booking.local`,
-      `DTSTAMP:${toIso(new Date()).replace(/-/g, '')}T000000Z`,
-      `DTSTART:${inVal}T150000`,
-      `DTEND:${outVal}T110000`,
-      `SUMMARY:Stay at 2-Bedroom Condominium (Ref #${ref})`,
-      `DESCRIPTION:Condominium Reservation Ref #${ref}\\nGuest: ${currentReservation.guestName}\\nGuests: ${currentReservation.guestCount}`,
-      `LOCATION:418 Serin Tagaytay Condominium`,
+      "UID:condo-" + ref + "@booking.local",
+      "DTSTAMP:" + toIso(new Date()).replace(/-/g, '') + "T000000Z",
+      "DTSTART:" + inVal + "T150000",
+      "DTEND:" + outVal + "T110000",
+      "SUMMARY:Stay at 2-Bedroom Condominium (Ref #" + ref + ")",
+      "DESCRIPTION:Condominium Reservation Ref #" + ref + "\\nGuest: " + currentReservation.guestName + "\\nGuests: " + currentReservation.guestCount,
+      "LOCATION:418 Serin Tagaytay Condominium",
       "STATUS:CONFIRMED",
       "END:VEVENT",
       "END:VCALENDAR"
     ].join("\r\n");
 
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const link = document.createElement('a');
+    var blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    var link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
-    link.setAttribute('download', `condo-booking-${ref}.ics`);
+    link.setAttribute('download', 'condo-booking-' + ref + '.ics');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
 
   function announceStatus(msg) {
-    const sr = document.getElementById('srAnnouncement');
+    var sr = document.getElementById('srAnnouncement');
     if (sr) sr.textContent = msg;
   }
 </script>
