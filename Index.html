@@ -41,9 +41,17 @@
               <span class="legend-item"><span class="legend-badge badge-booked"></span> Booked</span>
               <span class="legend-item"><span class="legend-badge badge-selected"></span> Selected</span>
             </div>
-            <a id="openGCalDirectLink" class="gcal-direct-link" target="_blank" rel="noopener noreferrer" href="https://calendar.google.com/calendar/u/0/r?cid=NWUyNTA0MThmOTdkMjAwOGJmZjkzY2MxMGE2MzhiMmFhYmU5ODFhZjJkNWUyNzFiMDU4ZWI4ODM1ZGRlMmFlMkBncm91cC5jYWxlbmRhci5nb29nbGUuY29t">
-              Google Calendar ↗
-            </a>
+          </div>
+
+          <!-- Inline Accessible Error Alert Banner -->
+          <div id="calendarErrorBanner" class="cal-error-banner" role="alert" style="display: none;" aria-live="assertive">
+            <div class="cal-error-content">
+              <span class="cal-error-icon" aria-hidden="true">⚠️</span>
+              <span id="calendarErrorMessage" class="cal-error-text">Unable to load live availability.</span>
+            </div>
+            <button type="button" id="calendarRetryBtn" class="cal-retry-btn" onclick="retryFetchAvailability()">
+              Retry
+            </button>
           </div>
 
           <div class="cal-weekdays-row" aria-hidden="true">

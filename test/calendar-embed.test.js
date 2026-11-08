@@ -15,7 +15,8 @@ import {
   isSelectionAllowed,
   parseFullCalendarSelection,
   shouldTriggerInitialization,
-  buildCalendarFallbackMarkup
+  buildCalendarFallbackMarkup,
+  createCalendarErrorMessage
 } from '../calendar-utils.js';
 
 describe('Google Calendar Embed & Integration Logic', () => {
@@ -173,6 +174,17 @@ describe('Google Calendar Embed & Integration Logic', () => {
       assert.equal(computeNights('2026-11-10', '2026-11-15'), 5);
       assert.equal(computeNights('2026-11-30', '2026-12-02'), 2);
       assert.equal(computeNights('2026-11-10', '2026-11-10'), 0);
+    });
+
+    test('createCalendarErrorMessage formats user-friendly error with error code or message', () => {
+      const errWithMsg = createCalendarErrorMessage(new Error('Network timeout'));
+      assert.equal(errWithMsg, 'Unable to load dates: Network timeout. Please click Retry.');
+
+      const stringErr = createCalendarErrorMessage('ScriptError');
+      assert.equal(stringErr, 'Unable to load dates: ScriptError. Please click Retry.');
+
+      const nullErr = createCalendarErrorMessage(null);
+      assert.equal(nullErr, 'Unable to load live availability. Please click Retry.');
     });
   });
 

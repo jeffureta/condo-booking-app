@@ -372,3 +372,18 @@ export function validateGuestFormPayload(data) {
   }
   return { isValid: true, error: null };
 }
+
+/**
+ * Creates user-friendly and actionable error message for calendar loading failures.
+ *
+ * @param {Error|string|null} err - Error object or string
+ * @returns {string} Friendly error message
+ */
+export function createCalendarErrorMessage(err) {
+  if (!err) {
+    return 'Unable to load live availability. Please click Retry.';
+  }
+  const detail = err && err.message ? err.message : String(err);
+  return `Unable to load dates: ${detail}. Please click Retry.`;
+}
+

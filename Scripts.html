@@ -32,14 +32,16 @@
     if (outInput) outInput.min = todayStr;
 
     initCustomCalendar();
+    fetchBookedRanges();
+  }
 
+  function fetchBookedRanges() {
+    hideCalendarError();
     announceStatus("Fetching Google Calendar availability...");
     if (typeof google !== 'undefined' && google.script && google.script.run) {
       google.script.run
         .withSuccessHandler(onBookedRangesLoaded)
-        .withFailureHandler(() => {
-          onBookedRangesLoaded([]);
-        })
+        .withFailureHandler(onBookedRangesError)
         .getBookedRanges();
     } else {
       // Local preview fallback mock
@@ -47,6 +49,53 @@
         { from: '2026-11-10', to: '2026-11-13', title: 'Existing Reservation' }
       ]);
     }
+  }
+
+  function retryFetchAvailability() {
+    const retryBtn = document.getElementById('calendarRetryBtn');
+    if (retryBtn) {
+      retryBtn.disabled = true;
+      retryBtn.textContent = 'Retrying...';
+    }
+    fetchBookedRanges();
+  }
+
+  function showCalendarError(err) {
+    console.error('[CondoCalendar] Failed to load calendar availability:', err);
+    const banner = document.getElementById('calendarErrorBanner');
+    const msgEl = document.getElementById('calendarErrorMessage');
+    const retryBtn = document.getElementById('calendarRetryBtn');
+
+    if (banner && msgEl) {
+      const detail = err && (err.message || (typeof err === 'string' ? err : ''));
+      msgEl.textContent = detail 
+        ? `Unable to load dates: ${detail}. Please check your connection and retry.`
+        : 'Unable to load dates from Google Calendar. Please click Retry.';
+      banner.style.display = 'flex';
+    }
+    if (retryBtn) {
+      retryBtn.disabled = false;
+      retryBtn.textContent = 'Retry';
+    }
+    announceStatus("Failed to load Google Calendar availability.");
+  }
+
+  function hideCalendarError() {
+    const banner = document.getElementById('calendarErrorBanner');
+    if (banner) {
+      banner.style.display = 'none';
+    }
+    const retryBtn = document.getElementById('calendarRetryBtn');
+    if (retryBtn) {
+      retryBtn.disabled = false;
+      retryBtn.textContent = 'Retry';
+    }
+  }
+
+  function onBookedRangesError(err) {
+    showCalendarError(err);
+    // Render the month grid so the user can at least view the calendar days
+    onBookedRangesLoaded([]);
   }
 
   // Handle both standard DOM loading and Google Apps Script sandboxed iframe execution
@@ -85,72 +134,77 @@
   }
 
   function renderCalendar() {
-    const gridEl = document.getElementById('customCalendarGrid');
-    const titleEl = document.getElementById('calMonthTitle');
-    if (!gridEl || !titleEl) return;
+    try {
+      const gridEl = document.getElementById('customCalendarGrid');
+      const titleEl = document.getElementById('calMonthTitle');
+      if (!gridEl || !titleEl) return;
 
-    const year = currentDisplayDate.getFullYear();
-    const month = currentDisplayDate.getMonth();
+      const year = currentDisplayDate.getFullYear();
+      const month = currentDisplayDate.getMonth();
 
-    // Update Header (e.g., "November 2026")
-    const monthName = currentDisplayDate.toLocaleString('default', { month: 'long' });
-    titleEl.textContent = `${monthName} ${year}`;
+      // Update Header (e.g., "November 2026")
+      const monthName = currentDisplayDate.toLocaleString('default', { month: 'long' });
+      titleEl.textContent = `${monthName} ${year}`;
 
-    gridEl.innerHTML = '';
+      gridEl.innerHTML = '';
 
-    // Calculate first day of month and grid start
-    const firstDay = new Date(year, month, 1);
-    const startDayOfWeek = firstDay.getDay(); // 0 = Sunday
-    const startDate = new Date(year, month, 1 - startDayOfWeek);
+      // Calculate first day of month and grid start
+      const firstDay = new Date(year, month, 1);
+      const startDayOfWeek = firstDay.getDay(); // 0 = Sunday
+      const startDate = new Date(year, month, 1 - startDayOfWeek);
 
-    const inVal = document.getElementById('checkInDate').value;
-    const outVal = document.getElementById('checkOutDate').value;
+      const inVal = document.getElementById('checkInDate').value;
+      const outVal = document.getElementById('checkOutDate').value;
 
-    for (let i = 0; i < 42; i++) {
-      const cellDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
-      const iso = toIso(cellDate);
-      const dayNum = cellDate.getDate();
-      const isCurrentMonth = cellDate.getMonth() === month;
+      for (let i = 0; i < 42; i++) {
+        const cellDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
+        const iso = toIso(cellDate);
+        const dayNum = cellDate.getDate();
+        const isCurrentMonth = cellDate.getMonth() === month;
 
-      const cell = document.createElement('div');
-      cell.className = 'cal-cell';
-      cell.dataset.date = iso;
-      cell.setAttribute('role', 'gridcell');
-      cell.setAttribute('tabindex', '0');
-      cell.setAttribute('aria-label', `${iso}`);
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell';
+        cell.dataset.date = iso;
+        cell.setAttribute('role', 'gridcell');
+        cell.setAttribute('tabindex', '0');
+        cell.setAttribute('aria-label', `${iso}`);
 
-      const numSpan = document.createElement('span');
-      numSpan.textContent = dayNum;
-      cell.appendChild(numSpan);
+        const numSpan = document.createElement('span');
+        numSpan.textContent = dayNum;
+        cell.appendChild(numSpan);
 
-      if (!isCurrentMonth) {
-        cell.classList.add('cal-other-month');
+        if (!isCurrentMonth) {
+          cell.classList.add('cal-other-month');
+        }
+
+        if (iso === todayStr) {
+          cell.classList.add('cal-today');
+        }
+
+        // Check if date is in the past
+        if (iso < todayStr) {
+          cell.classList.add('cal-disabled');
+          cell.setAttribute('aria-disabled', 'true');
+        }
+
+        // Check if date is booked (turnover on checkout day is allowed for check-in)
+        const isOccupied = currentBookedRanges.some(r => iso >= r.from && iso < r.to);
+        if (isOccupied) {
+          cell.classList.add('cal-booked');
+          cell.setAttribute('aria-disabled', 'true');
+        }
+
+        // Apply active selection or hover-drag range classes
+        applyCellSelectionClasses(cell, iso, inVal, outVal);
+
+        // Event Listeners for Click and Continuous Drag
+        attachCellEvents(cell, iso);
+
+        gridEl.appendChild(cell);
       }
-
-      if (iso === todayStr) {
-        cell.classList.add('cal-today');
-      }
-
-      // Check if date is in the past
-      if (iso < todayStr) {
-        cell.classList.add('cal-disabled');
-        cell.setAttribute('aria-disabled', 'true');
-      }
-
-      // Check if date is booked (turnover on checkout day is allowed for check-in)
-      const isOccupied = currentBookedRanges.some(r => iso >= r.from && iso < r.to);
-      if (isOccupied) {
-        cell.classList.add('cal-booked');
-        cell.setAttribute('aria-disabled', 'true');
-      }
-
-      // Apply active selection or hover-drag range classes
-      applyCellSelectionClasses(cell, iso, inVal, outVal);
-
-      // Event Listeners for Click and Continuous Drag
-      attachCellEvents(cell, iso);
-
-      gridEl.appendChild(cell);
+    } catch (err) {
+      console.error('[CondoCalendar] Error rendering calendar grid:', err);
+      showCalendarError(err);
     }
   }
 
@@ -343,6 +397,7 @@
   }
 
   function onBookedRangesLoaded(ranges) {
+    hideCalendarError();
     currentBookedRanges = ranges || [];
     announceStatus("Google Calendar availability updated.");
     renderCalendar();
