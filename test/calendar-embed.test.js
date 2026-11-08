@@ -8,7 +8,9 @@ import {
   formatCalendarEventPayload,
   mapBookingsToFullCalendarEvents,
   isSelectionAllowed,
-  parseFullCalendarSelection
+  parseFullCalendarSelection,
+  shouldTriggerInitialization,
+  buildCalendarFallbackMarkup
 } from '../calendar-utils.js';
 
 describe('Google Calendar Embed & Integration Logic', () => {
@@ -149,6 +151,21 @@ describe('Google Calendar Embed & Integration Logic', () => {
       assert.equal(isSelectionAllowed({ startStr: '2026-11-09', endStr: '2026-11-11' }, bookedRanges, today), false);
       assert.equal(isSelectionAllowed({ startStr: '2026-11-11', endStr: '2026-11-12' }, bookedRanges, today), false);
       assert.equal(isSelectionAllowed({ startStr: '2026-11-08', endStr: '2026-11-15' }, bookedRanges, today), false);
+    });
+
+    test('shouldTriggerInitialization evaluates document readyState correctly', () => {
+      assert.equal(shouldTriggerInitialization('loading'), false);
+      assert.equal(shouldTriggerInitialization('interactive'), true);
+      assert.equal(shouldTriggerInitialization('complete'), true);
+      assert.equal(shouldTriggerInitialization(undefined), false);
+    });
+
+    test('buildCalendarFallbackMarkup generates accessible iframe fallback when FullCalendar CDN fails', () => {
+      const fallbackHtml = buildCalendarFallbackMarkup(CALENDAR_ID, 'Asia/Manila');
+      assert.ok(fallbackHtml.includes('<iframe'));
+      assert.ok(fallbackHtml.includes('calendar.google.com/calendar/embed'));
+      assert.ok(fallbackHtml.includes(encodeURIComponent(CALENDAR_ID)));
+      assert.ok(fallbackHtml.includes('title='));
     });
   });
 });

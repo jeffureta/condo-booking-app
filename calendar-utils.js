@@ -178,3 +178,28 @@ export function isSelectionAllowed(selectInfo, bookedRanges = [], todayIso = new
   // Check overlap with booked ranges: overlap if checkIn < r.to and checkOut > r.from
   return !hasBookingConflict(checkIn, checkOut, bookedRanges);
 }
+
+/**
+ * Determines whether DOM initialization should run immediately based on document.readyState.
+ * In sandboxed iframe environments (such as Google Apps Script HtmlService),
+ * DOMContentLoaded may have already fired by the time the user code executes.
+ *
+ * @param {string} readyState - The document.readyState string ('loading', 'interactive', 'complete')
+ * @returns {boolean} True if DOM is already parsed and ready for element manipulation.
+ */
+export function shouldTriggerInitialization(readyState) {
+  return readyState === 'interactive' || readyState === 'complete';
+}
+
+/**
+ * Builds resilient fallback iframe HTML markup for Google Calendar
+ * if client-side library loading fails or is delayed.
+ *
+ * @param {string} calendarId - Google Calendar ID
+ * @param {string} timeZone - TimeZone string
+ * @returns {string} HTML iframe markup
+ */
+export function buildCalendarFallbackMarkup(calendarId, timeZone = 'Asia/Manila') {
+  const embedUrl = buildGoogleCalendarEmbedUrl(calendarId, timeZone);
+  return `<iframe src="${embedUrl}" style="border: 0; width: 100%; height: 420px; border-radius: 8px;" frameborder="0" scrolling="no" title="Google Calendar Availability Schedule" loading="lazy"></iframe>`;
+}
