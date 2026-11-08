@@ -6,6 +6,11 @@ import {
   hasBookingConflict,
   validateBookingDates,
   formatCalendarEventPayload,
+  generateMonthGrid,
+  isDateBooked,
+  isRangeConflicting,
+  calculateSelectionRange,
+  computeNights,
   mapBookingsToFullCalendarEvents,
   isSelectionAllowed,
   parseFullCalendarSelection,
@@ -97,6 +102,78 @@ describe('Google Calendar Embed & Integration Logic', () => {
     assert.ok(payload.description.includes('Booking Reference: CND-TEST'));
     assert.ok(payload.description.includes('Check-in: 2026-11-10'));
     assert.ok(payload.description.includes('Check-out: 2026-11-11'));
+  });
+
+  describe('Vanilla JS Calendar Grid Core (TDD)', () => {
+    test('generateMonthGrid returns 42 calendar day cells for standard 6-week layout', () => {
+      const grid = generateMonthGrid(2026, 10); // November 2026 (0-indexed month: 10)
+      assert.equal(grid.length, 42);
+      // Nov 1, 2026 is Sunday, so first day is Nov 1
+      assert.equal(grid[0].isoDate, '2026-11-01');
+      assert.equal(grid[0].isCurrentMonth, true);
+      assert.equal(grid[0].dayNumber, 1);
+
+      // Verify December padding at end
+      const lastCell = grid[41];
+      assert.equal(lastCell.isCurrentMonth, false);
+      assert.ok(lastCell.isoDate.startsWith('2026-12'));
+    });
+
+    test('isDateBooked correctly identifies occupied dates', () => {
+      const bookedRanges = [
+        { from: '2026-11-10', to: '2026-11-13' },
+        { from: '2026-11-20', to: '2026-11-22' }
+      ];
+
+      // Stay check-in Nov 10, guest stays night of 10, 11, 12, departs 11am on 13
+      assert.equal(isDateBooked('2026-11-09', bookedRanges), false);
+      assert.equal(isDateBooked('2026-11-10', bookedRanges), true);
+      assert.equal(isDateBooked('2026-11-11', bookedRanges), true);
+      assert.equal(isDateBooked('2026-11-12', bookedRanges), true);
+      // Checkout day (Nov 13): available for incoming guest check-in at 3pm
+      assert.equal(isDateBooked('2026-11-13', bookedRanges), false);
+      assert.equal(isDateBooked('2026-11-14', bookedRanges), false);
+    });
+
+    test('isRangeConflicting checks whether requested stay crosses existing bookings', () => {
+      const bookedRanges = [
+        { from: '2026-11-10', to: '2026-11-13' }
+      ];
+
+      // Crossing booked range: conflict
+      assert.equal(isRangeConflicting('2026-11-08', '2026-11-14', bookedRanges), true);
+      assert.equal(isRangeConflicting('2026-11-11', '2026-11-12', bookedRanges), true);
+      // Adjacent checkout day turnover: no conflict
+      assert.equal(isRangeConflicting('2026-11-08', '2026-11-10', bookedRanges), false);
+      assert.equal(isRangeConflicting('2026-11-13', '2026-11-16', bookedRanges), false);
+    });
+
+    test('calculateSelectionRange orders drag-backward or drag-forward selections', () => {
+      // Forward drag
+      const forward = calculateSelectionRange('2026-11-14', '2026-11-18');
+      assert.equal(forward.checkIn, '2026-11-14');
+      assert.equal(forward.checkOut, '2026-11-18');
+      assert.equal(forward.nights, 4);
+
+      // Backward drag
+      const backward = calculateSelectionRange('2026-11-18', '2026-11-14');
+      assert.equal(backward.checkIn, '2026-11-14');
+      assert.equal(backward.checkOut, '2026-11-18');
+      assert.equal(backward.nights, 4);
+
+      // Same date clicked
+      const same = calculateSelectionRange('2026-11-14', '2026-11-14');
+      assert.equal(same.checkIn, '2026-11-14');
+      assert.equal(same.checkOut, '2026-11-14');
+      assert.equal(same.nights, 0);
+    });
+
+    test('computeNights computes accurate night counts', () => {
+      assert.equal(computeNights('2026-11-10', '2026-11-11'), 1);
+      assert.equal(computeNights('2026-11-10', '2026-11-15'), 5);
+      assert.equal(computeNights('2026-11-30', '2026-12-02'), 2);
+      assert.equal(computeNights('2026-11-10', '2026-11-10'), 0);
+    });
   });
 
   describe('FullCalendar Data & Interaction Adapter (TDD)', () => {

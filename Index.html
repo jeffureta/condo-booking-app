@@ -5,9 +5,8 @@
   <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Condo Booking & Availability</title>
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- FullCalendar 6 Standard Bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   
   <?!= include('Styles'); ?>
 </head>
@@ -30,18 +29,36 @@
           Interactive Availability Calendar (Select Dates or Drag to Book)
         </label>
         
-        <div class="fc-calendar-card" aria-labelledby="calendarLabel">
-          <div class="fc-toolbar-legend">
-            <div class="fc-legend-items" aria-hidden="true">
+        <div class="calendar-card" aria-labelledby="calendarLabel">
+          <div class="calendar-card-header">
+            <div class="cal-nav-group">
+              <button type="button" id="calPrevBtn" class="cal-nav-btn" aria-label="Previous Month">&lsaquo;</button>
+              <h2 id="calMonthTitle" class="cal-month-title">Month Year</h2>
+              <button type="button" id="calNextBtn" class="cal-nav-btn" aria-label="Next Month">&rsaquo;</button>
+            </div>
+            <div class="calendar-legend" aria-hidden="true">
               <span class="legend-item"><span class="legend-badge badge-available"></span> Available</span>
-              <span class="legend-item"><span class="legend-badge badge-booked"></span> Booked / Occupied</span>
-              <span class="legend-item"><span class="legend-badge badge-selected"></span> Selected Stay</span>
+              <span class="legend-item"><span class="legend-badge badge-booked"></span> Booked</span>
+              <span class="legend-item"><span class="legend-badge badge-selected"></span> Selected</span>
             </div>
             <a id="openGCalDirectLink" class="gcal-direct-link" target="_blank" rel="noopener noreferrer" href="https://calendar.google.com/calendar/u/0/r?cid=NWUyNTA0MThmOTdkMjAwOGJmZjkzY2MxMGE2MzhiMmFhYmU5ODFhZjJkNWUyNzFiMDU4ZWI4ODM1ZGRlMmFlMkBncm91cC5jYWxlbmRhci5nb29nbGUuY29t">
               Google Calendar ↗
             </a>
           </div>
-          <div id="calendarContainer" aria-label="Interactive Booking Calendar Grid"></div>
+
+          <div class="cal-weekdays-row" aria-hidden="true">
+            <div class="cal-weekday">Sun</div>
+            <div class="cal-weekday">Mon</div>
+            <div class="cal-weekday">Tue</div>
+            <div class="cal-weekday">Wed</div>
+            <div class="cal-weekday">Thu</div>
+            <div class="cal-weekday">Fri</div>
+            <div class="cal-weekday">Sat</div>
+          </div>
+
+          <div id="customCalendarGrid" class="cal-days-grid" role="grid" aria-label="Condo Availability Calendar Grid">
+            <!-- Dynamically populated day cells -->
+          </div>
         </div>
       </div>
 

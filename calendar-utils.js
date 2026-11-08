@@ -4,6 +4,102 @@
  */
 
 /**
+ * Generates an array of 42 calendar day cells for standard 6-week month grid.
+ *
+ * @param {number} year - Full 4-digit year (e.g. 2026)
+ * @param {number} monthIndex - 0-indexed month (0 = January, 11 = December)
+ * @returns {Array<{isoDate: string, dayNumber: number, isCurrentMonth: boolean, dateObj: Date}>}
+ */
+export function generateMonthGrid(year, monthIndex) {
+  const firstDay = new Date(year, monthIndex, 1);
+  const firstDayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday...
+  
+  // Calculate starting date for first grid cell
+  const startDate = new Date(year, monthIndex, 1 - firstDayOfWeek);
+  const cells = [];
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const isoDate = `${y}-${m}-${day}`;
+    cells.push({
+      isoDate,
+      dayNumber: d.getDate(),
+      isCurrentMonth: d.getMonth() === monthIndex,
+      dateObj: d
+    });
+  }
+  return cells;
+}
+
+/**
+ * Checks if a specific date is booked.
+ * In hotel/condo bookings, a reservation from [from, to) covers nights from `from` up to `to - 1`.
+ * The checkout day `to` is available for incoming guest check-in at 3:00 PM.
+ *
+ * @param {string} dateStr - YYYY-MM-DD
+ * @param {Array<{from: string, to: string}>} bookedRanges
+ * @returns {boolean}
+ */
+export function isDateBooked(dateStr, bookedRanges = []) {
+  if (!bookedRanges || !bookedRanges.length) return false;
+  return bookedRanges.some(r => {
+    return dateStr >= r.from && dateStr < r.to;
+  });
+}
+
+/**
+ * Checks whether a requested [startStr, endStr] range conflicts with any booked ranges.
+ * Uses strict interval overlap: start < r.to && end > r.from.
+ *
+ * @param {string} startStr - YYYY-MM-DD
+ * @param {string} endStr - YYYY-MM-DD
+ * @param {Array<{from: string, to: string}>} bookedRanges
+ * @returns {boolean}
+ */
+export function isRangeConflicting(startStr, endStr, bookedRanges = []) {
+  return hasBookingConflict(startStr, endStr, bookedRanges);
+}
+
+/**
+ * Computes ordered checkIn and checkOut dates plus night count from two arbitrary click/drag dates.
+ *
+ * @param {string} anchorStr - YYYY-MM-DD
+ * @param {string} hoverStr - YYYY-MM-DD
+ * @returns {{checkIn: string, checkOut: string, nights: number}}
+ */
+export function calculateSelectionRange(anchorStr, hoverStr) {
+  if (!anchorStr || !hoverStr) {
+    return { checkIn: '', checkOut: '', nights: 0 };
+  }
+  let checkIn = anchorStr;
+  let checkOut = hoverStr;
+  if (anchorStr > hoverStr) {
+    checkIn = hoverStr;
+    checkOut = anchorStr;
+  }
+  const nights = computeNights(checkIn, checkOut);
+  return { checkIn, checkOut, nights };
+}
+
+/**
+ * Computes integer night count between checkIn and checkOut.
+ *
+ * @param {string} checkInStr - YYYY-MM-DD
+ * @param {string} checkOutStr - YYYY-MM-DD
+ * @returns {number}
+ */
+export function computeNights(checkInStr, checkOutStr) {
+  if (!checkInStr || !checkOutStr || checkOutStr <= checkInStr) return 0;
+  const d1 = new Date(checkInStr + 'T00:00:00');
+  const d2 = new Date(checkOutStr + 'T00:00:00');
+  const diffMs = d2.getTime() - d1.getTime();
+  return Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+}
+
+/**
  * Builds an accessible Google Calendar iframe embed URL
  * @param {string} calendarId - Google Calendar ID
  * @param {string} timeZone - TimeZone string (e.g., 'Asia/Manila' or 'Europe/London')
