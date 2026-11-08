@@ -4,7 +4,8 @@ import {
   buildGoogleCalendarEmbedUrl,
   buildGoogleCalendarDirectLink,
   hasBookingConflict,
-  validateBookingDates
+  validateBookingDates,
+  formatCalendarEventPayload
 } from '../calendar-utils.js';
 
 describe('Google Calendar Embed & Integration Logic', () => {
@@ -29,9 +30,18 @@ describe('Google Calendar Embed & Integration Logic', () => {
 
   test('hasBookingConflict correctly flags overlap with existing reservations', () => {
     const existingBookings = [
+      { from: '2026-11-10', to: '2026-11-11', title: 'Booking: Test Guest (2 guests) - Ref #CND-TEST' },
       { from: '2026-12-10', to: '2026-12-15', title: 'Confirmed Guest' },
       { from: '2026-12-24', to: '2026-12-28', title: 'Holiday Reservation' }
     ];
+
+    // Conflict for Nov 10-11, 2026
+    assert.equal(hasBookingConflict('2026-11-10', '2026-11-11', existingBookings), true);
+    assert.equal(hasBookingConflict('2026-11-09', '2026-11-12', existingBookings), true);
+    // Non-conflicting booking just before Nov 10
+    assert.equal(hasBookingConflict('2026-11-08', '2026-11-10', existingBookings), false);
+    // Non-conflicting booking just after Nov 11
+    assert.equal(hasBookingConflict('2026-11-11', '2026-11-13', existingBookings), false);
 
     // Conflict overlapping middle
     assert.equal(hasBookingConflict('2026-12-12', '2026-12-14', existingBookings), true);
@@ -62,5 +72,25 @@ describe('Google Calendar Embed & Integration Logic', () => {
     const inPast = validateBookingDates('2026-11-01', '2026-11-05', '2026-11-08');
     assert.equal(inPast.isValid, false);
     assert.match(inPast.error, /Check-in date cannot be in the past/i);
+  });
+
+  test('formatCalendarEventPayload formats event summary, timestamps, and description accurately', () => {
+    const bookingData = {
+      startDate: '2026-11-10',
+      endDate: '2026-11-11',
+      guestName: 'Test Guest',
+      guestCount: '2',
+      guestEmail: 'testguest@example.com',
+      guestPhone: '+63 917 123 4567'
+    };
+
+    const payload = formatCalendarEventPayload(bookingData, 'CND-TEST', '+08:00');
+    assert.equal(payload.summary, 'Booking: Test Guest (2 guests) - Ref #CND-TEST');
+    assert.equal(payload.startRfc3339, '2026-11-10T15:00:00+08:00');
+    assert.equal(payload.endRfc3339, '2026-11-11T11:00:00+08:00');
+    assert.ok(payload.description.includes('Guest Name: Test Guest'));
+    assert.ok(payload.description.includes('Booking Reference: CND-TEST'));
+    assert.ok(payload.description.includes('Check-in: 2026-11-10'));
+    assert.ok(payload.description.includes('Check-out: 2026-11-11'));
   });
 });

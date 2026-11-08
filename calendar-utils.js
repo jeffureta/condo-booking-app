@@ -70,3 +70,42 @@ export function validateBookingDates(checkIn, checkOut, todayIso) {
   }
   return { isValid: true, error: null };
 }
+
+/**
+ * Formats calendar event fields (summary, timestamps, description) for Google Calendar creation.
+ * Check-in defaults to 15:00 and check-out defaults to 11:00.
+ *
+ * @param {Object} bookingData
+ * @param {string} bookingData.startDate - YYYY-MM-DD
+ * @param {string} bookingData.endDate - YYYY-MM-DD
+ * @param {string} bookingData.guestName
+ * @param {string|number} bookingData.guestCount
+ * @param {string} [bookingData.guestEmail]
+ * @param {string} [bookingData.guestPhone]
+ * @param {string} refId - Booking reference identifier
+ * @param {string} [tzOffset='+08:00'] - ISO timezone offset (default Manila UTC+8)
+ * @returns {{summary: string, startRfc3339: string, endRfc3339: string, description: string}}
+ */
+export function formatCalendarEventPayload(bookingData, refId, tzOffset = '+08:00') {
+  const summary = `Booking: ${bookingData.guestName} (${bookingData.guestCount} guests) - Ref #${refId}`;
+  const startRfc3339 = `${bookingData.startDate}T15:00:00${tzOffset}`;
+  const endRfc3339 = `${bookingData.endDate}T11:00:00${tzOffset}`;
+
+  const descriptionLines = [
+    `Guest Name: ${bookingData.guestName}`,
+    `Email: ${bookingData.guestEmail || 'N/A'}`,
+    `Phone: ${bookingData.guestPhone || 'N/A'}`,
+    `Guests: ${bookingData.guestCount}`,
+    `Booking Reference: ${refId}`,
+    `Check-in: ${bookingData.startDate}`,
+    `Check-out: ${bookingData.endDate}`,
+    `Status: Confirmed`
+  ];
+
+  return {
+    summary,
+    startRfc3339,
+    endRfc3339,
+    description: descriptionLines.join('\n')
+  };
+}
