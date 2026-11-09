@@ -1,7 +1,10 @@
 /**
  * Zero-Latency Deterministic Dynamic Pricing Engine for Unit 418 Serin East Tagaytay.
- * Pure ES Module logic without external API dependencies.
+ * Reads online average pricing benchmark from staycation_prices.db (or fallback)
+ * and guarantees a 500 PHP/night undercut for guests.
  */
+
+import { getLatestAverageMarketPrice } from './sqlite-pricing-reader.js';
 
 export const PROPERTY_INFO = {
   unitNumber: 'Unit 418',
@@ -12,6 +15,8 @@ export const PROPERTY_INFO = {
   maxGuests: 6,
   extraGuestFeePerNight: 400
 };
+
+export const ONLINE_AVERAGE_MARKET_RATE = getLatestAverageMarketPrice();
 
 export const BASE_MARKET_RATES = {
   WEEKDAY: 5000,
@@ -163,7 +168,7 @@ export function getHolidayOrEvent(dateStr) {
   return null;
 }
 
-export function calculateNightlyPrice(dateStr) {
+export function calculateNightlyPrice(dateStr, marketAverageOverride = ONLINE_AVERAGE_MARKET_RATE) {
   const holiday = getHolidayOrEvent(dateStr);
   const season = getSeasonForDate(dateStr);
   const dateObj = new Date(dateStr + 'T00:00:00');
@@ -172,24 +177,18 @@ export function calculateNightlyPrice(dateStr) {
 
   let tier = 'WEEKDAY';
   let tierLabel = 'Weekday';
-  let baseMarketRate = BASE_MARKET_RATES.WEEKDAY;
-  let multiplier = season.weekdayMultiplier;
 
   if (holiday) {
     tier = 'PEAK';
     tierLabel = holiday;
-    baseMarketRate = BASE_MARKET_RATES.PEAK;
-    multiplier = 1.0; // Holiday peak rate is already premium
   } else if (isWeekend) {
     tier = 'WEEKEND';
     tierLabel = 'Weekend';
-    baseMarketRate = BASE_MARKET_RATES.WEEKEND;
-    multiplier = season.weekendMultiplier;
   }
 
-  // Calculate market rate rounded to nearest 50
-  const adjustedMarket = Math.round((baseMarketRate * multiplier) / 50) * 50;
-  // Unit 418 rate is strictly 500 PHP below the 10km market benchmark
+  // Use the online average market rate from the database (or override)
+  const adjustedMarket = Math.round(marketAverageOverride);
+  // Unit 418 rate is strictly 500 PHP below the online average
   const unitRate = adjustedMarket - COMPETITOR_UNDERCUT_PHP;
 
   return {
@@ -206,7 +205,7 @@ export function calculateNightlyPrice(dateStr) {
   };
 }
 
-export function calculateStayQuote(checkInStr, checkOutStr, guestCount = 2) {
+export function calculateStayQuote(checkInStr, checkOutStr, guestCount = 2, marketAverageOverride = ONLINE_AVERAGE_MARKET_RATE) {
   if (!checkInStr || !checkOutStr || checkOutStr <= checkInStr) {
     return null;
   }
@@ -231,7 +230,7 @@ export function calculateStayQuote(checkInStr, checkOutStr, guestCount = 2) {
     const d = String(cur.getDate()).padStart(2, '0');
     const dateStr = `${y}-${m}-${d}`;
 
-    const nightly = calculateNightlyPrice(dateStr);
+    const nightly = calculateNightlyPrice(dateStr, marketAverageOverride);
     nightlyBreakdown.push(nightly);
     marketSubtotal += nightly.marketRate;
     baseUnitSubtotal += nightly.unitRate;
