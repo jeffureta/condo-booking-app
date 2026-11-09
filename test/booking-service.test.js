@@ -6,6 +6,7 @@ import {
   formatHostEmail,
   validateBookingPayload
 } from '../booking-service-core.js';
+import { PROPERTY_INFO } from '../pricing-engine.js';
 
 describe('Booking Service Domain Logic (TDD)', () => {
   test('generateReferenceId returns unique reference ID in CND-XXXX format', () => {
@@ -37,7 +38,7 @@ describe('Booking Service Domain Logic (TDD)', () => {
     assert.match(invalidDates.message, /invalid start or end dates/i);
   });
 
-  test('formatGuestEmail generates clear confirmation email with reference ID and check-in times', () => {
+  test('formatGuestEmail generates clear confirmation email with reference ID, pricing, and full address', () => {
     const data = {
       guestName: 'Maria Santos',
       guestEmail: 'maria@example.com',
@@ -47,13 +48,18 @@ describe('Booking Service Domain Logic (TDD)', () => {
     };
     const { subject, body } = formatGuestEmail(data, 'CND-9988');
     assert.ok(subject.includes('CND-9988'));
+    assert.ok(subject.includes('Unit 418 Serin East Tagaytay'));
     assert.ok(body.includes('Maria Santos'));
+    assert.ok(body.includes(PROPERTY_INFO.fullAddress));
     assert.ok(body.includes('Check-in Date: 2026-12-20 (3:00 PM)'));
     assert.ok(body.includes('Check-out Date: 2026-12-23 (11:00 AM)'));
     assert.ok(body.includes('Number of Guests: 4'));
+    assert.ok(body.includes('Pricing & Staycation Savings Breakdown:'));
+    assert.ok(body.includes('-₱500/night dynamic discount'));
+    assert.ok(body.includes('Total Confirmed Amount:'));
   });
 
-  test('formatHostEmail generates clear host notification email', () => {
+  test('formatHostEmail generates clear host notification email with pricing and full address', () => {
     const data = {
       guestName: 'Maria Santos',
       guestEmail: 'maria@example.com',
@@ -64,8 +70,11 @@ describe('Booking Service Domain Logic (TDD)', () => {
     };
     const { subject, body } = formatHostEmail(data, 'CND-9988');
     assert.ok(subject.includes('CND-9988'));
-    assert.ok(body.includes('Maria Santos'));
+    assert.ok(subject.includes('Maria Santos'));
+    assert.ok(body.includes(PROPERTY_INFO.fullAddress));
     assert.ok(body.includes('+63 917 555 1234'));
     assert.ok(body.includes('Dates: 2026-12-20 to 2026-12-23'));
+    assert.ok(body.includes('Total Amount:'));
+    assert.ok(body.includes('Guest Savings vs 10km Market:'));
   });
 });

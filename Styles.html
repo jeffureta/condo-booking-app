@@ -13,6 +13,7 @@
     --success-bg: #f0fdf4;
     --success-text: #166534;
     --card-bg: #ffffff;
+    --tagaytay-green: #047857;
   }
 
   * {
@@ -57,25 +58,48 @@
   }
 
   .hero-banner {
-    min-height: 160px;
-    background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.75)), url('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+    min-height: 190px;
+    background: linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.88)), url('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    padding: 22px;
+    padding: 24px;
     color: white;
   }
 
+  .hero-badge-row {
+    margin-bottom: 8px;
+  }
+
+  .hero-pill-badge {
+    display: inline-block;
+    background: rgba(16, 185, 129, 0.95);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
   .hero-banner h1 {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     letter-spacing: -0.02em;
   }
 
-  .hero-banner p {
-    font-size: 14px;
+  .hero-location {
+    font-size: 13px;
     opacity: 0.95;
     margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .hero-subtext {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 2px;
   }
 
   .booking-main {
@@ -109,6 +133,12 @@
     }
     .booking-main {
       padding: 16px;
+    }
+    .cal-cell {
+      min-height: 48px !important;
+    }
+    .cal-cell-price {
+      font-size: 8px !important;
     }
   }
 
@@ -162,7 +192,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     padding-bottom: 12px;
     border-bottom: 1px solid var(--border);
   }
@@ -215,7 +245,7 @@
     align-items: center;
     gap: 14px;
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .legend-item {
@@ -230,9 +260,42 @@
     border-radius: 3px;
     display: inline-block;
   }
-  .badge-available { background: #ffffff; border: 1px solid #cbd5e1; }
+  .badge-available { background: #f0fdf4; border: 1px solid #86efac; }
   .badge-booked { background: #94a3b8; }
   .badge-selected { background: var(--primary); }
+
+  /* Season indicator banner */
+  .cal-season-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-size: 12px;
+  }
+
+  .cal-season-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .cal-season-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cal-season-title {
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .cal-season-desc {
+    color: var(--text-muted);
+    font-size: 11px;
+  }
 
   /* Calendar Inline Error Alert Banner */
   .cal-error-banner {
@@ -301,35 +364,57 @@
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 4px;
-    min-height: 320px;
+    min-height: 330px;
     touch-action: none;
   }
 
   .cal-cell {
     aspect-ratio: 1 / 1;
-    min-height: 44px;
+    min-height: 48px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    border: 1px solid transparent;
-    font-size: 14px;
-    font-weight: 500;
+    border: 1px solid #f1f5f9;
+    background-color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     position: relative;
+    padding: 2px;
     transition: background-color 0.1s, border-color 0.1s;
+  }
+
+  .cal-cell-day {
+    line-height: 1.1;
+  }
+
+  .cal-cell-price {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--tagaytay-green);
+    margin-top: 2px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .cal-cell.cal-peak-date .cal-cell-price {
+    color: #b91c1c;
   }
 
   .cal-cell:hover:not(.cal-disabled):not(.cal-booked) {
     background-color: #f0fdf4;
     border-color: #86efac;
-    color: #166534;
   }
 
   .cal-cell.cal-other-month {
     color: #cbd5e1;
     background: #fafafa;
+    border-color: transparent;
+  }
+  .cal-cell.cal-other-month .cal-cell-price {
+    color: #94a3b8;
   }
 
   .cal-cell.cal-today {
@@ -340,9 +425,10 @@
   .cal-cell.cal-today::after {
     content: '';
     position: absolute;
-    bottom: 4px;
-    width: 4px;
-    height: 4px;
+    top: 4px;
+    right: 4px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background-color: #2563eb;
   }
@@ -351,6 +437,10 @@
     color: #cbd5e1;
     cursor: not-allowed;
     background-color: #f8fafc;
+    border-color: transparent;
+  }
+  .cal-cell.cal-disabled .cal-cell-price {
+    display: none;
   }
 
   .cal-cell.cal-booked {
@@ -359,6 +449,10 @@
     cursor: not-allowed;
     text-decoration: line-through;
     opacity: 0.85;
+    border-color: #e2e8f0;
+  }
+  .cal-cell.cal-booked .cal-cell-price {
+    display: none;
   }
 
   .cal-cell.cal-booked::before {
@@ -368,16 +462,18 @@
     font-weight: 600;
     color: #94a3b8;
     position: absolute;
-    bottom: 2px;
+    bottom: 3px;
   }
 
   /* Selection Range Highlights */
   .cal-cell.cal-selected-start {
     background-color: var(--primary) !important;
     color: #ffffff !important;
-    font-weight: 700;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+  }
+  .cal-cell.cal-selected-start .cal-cell-price {
+    color: #bfdbfe !important;
   }
 
   .cal-cell.cal-in-range {
@@ -385,44 +481,60 @@
     color: #1e3a8a !important;
     border-radius: 0;
   }
+  .cal-cell.cal-in-range .cal-cell-price {
+    color: #1d4ed8 !important;
+  }
 
   .cal-cell.cal-selected-end {
     background-color: var(--primary) !important;
     color: #ffffff !important;
-    font-weight: 700;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+  }
+  .cal-cell.cal-selected-end .cal-cell-price {
+    color: #bfdbfe !important;
   }
 
   .cal-cell.cal-selected-single {
     background-color: var(--primary) !important;
     color: #ffffff !important;
-    font-weight: 700;
     border-radius: 8px !important;
   }
+  .cal-cell.cal-selected-single .cal-cell-price {
+    color: #bfdbfe !important;
+  }
 
+  /* Stay Summary Card & Dynamic Pricing Breakdown */
   .stay-summary-card {
     background: #eff6ff;
     border: 1.5px solid #bfdbfe;
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-top: 14px;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .stay-header-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .stay-details {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #bfdbfe;
   }
 
   .stay-col {
     display: flex;
     flex-direction: column;
+  }
+
+  .stay-arrow {
+    font-size: 16px;
+    color: #3b82f6;
+    font-weight: 700;
   }
 
   .stay-label {
@@ -446,6 +558,92 @@
     color: #1d4ed8;
     padding: 4px 10px;
     border-radius: 9999px;
+  }
+
+  .stay-pricing-box {
+    background: #ffffff;
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .pricing-comparison-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .pricing-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .pricing-subtext {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .price-savings-pill {
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    border: 1px solid #bbf7d0;
+  }
+
+  .pricing-line-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  .price-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-muted);
+  }
+
+  .price-strike {
+    text-decoration: line-through;
+    color: #94a3b8;
+  }
+
+  .price-highlight {
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .price-discount-row {
+    color: #047857;
+    font-weight: 600;
+  }
+
+  .price-discount-text {
+    color: #047857;
+  }
+
+  .price-total-row {
+    padding-top: 8px;
+    margin-top: 6px;
+    border-top: 1.5px solid #e2e8f0;
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 15px;
+  }
+
+  .price-total-amount {
+    color: #1d4ed8;
+    font-size: 18px;
   }
 
   .btn-submit {

@@ -3,6 +3,10 @@
  * Accessible across all backend Google Apps Script files.
  */
 
+// Property Identification & Location
+const CONDO_UNIT_NAME = 'Unit 418 Serin East Tagaytay';
+const CONDO_FULL_ADDRESS = 'Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, Tagaytay City, Cavite, 4120, Philippines';
+
 // Calendar ID for Google Calendar Integration
 const CALENDAR_ID = '5e250418f97d2008bff93cc10a638b2aabe981af2d5e271b058eb8835dde2ae2@group.calendar.google.com';
 

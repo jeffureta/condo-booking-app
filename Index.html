@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Condo Booking & Availability</title>
+  <title>Unit 418 Serin East Tagaytay • 2-Bedroom Condo Booking</title>
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
@@ -16,8 +16,12 @@
 
 <div class="booking-wrapper">
   <header class="hero-banner">
-    <h1>2-Bedroom Condominium</h1>
-    <p>Check real-time Google Calendar availability and reserve your stay instantly.</p>
+    <div class="hero-badge-row">
+      <span class="hero-pill-badge">⚡ Guaranteed ₱500/night Below 10km 2BR Tagaytay Market</span>
+    </div>
+    <h1>Unit 418 • Serin East Tagaytay</h1>
+    <p class="hero-location">📍 Brgy. Silang Crossing East, Tagaytay City, Cavite, 4120, Philippines</p>
+    <p class="hero-subtext">2-Bedroom Condominium (Up to 6 Guests) • Beside Ayala Malls Serin & Lourdes Church</p>
   </header>
 
   <main class="booking-main">
@@ -26,7 +30,7 @@
     <form id="bookingForm" onsubmit="submitReservation(event)" novalidate>
       <div class="form-group">
         <label id="calendarLabel">
-          Interactive Availability Calendar (Select Dates or Drag to Book)
+          Interactive Availability & Dynamic Pricing Calendar (Click or Drag Dates)
         </label>
         
         <div class="calendar-card" aria-labelledby="calendarLabel">
@@ -37,9 +41,18 @@
               <button type="button" id="calNextBtn" class="cal-nav-btn" aria-label="Next Month">&rsaquo;</button>
             </div>
             <div class="calendar-legend" aria-hidden="true">
-              <span class="legend-item"><span class="legend-badge badge-available"></span> Available</span>
+              <span class="legend-item"><span class="legend-badge badge-available"></span> Available & Priced</span>
               <span class="legend-item"><span class="legend-badge badge-booked"></span> Booked</span>
               <span class="legend-item"><span class="legend-badge badge-selected"></span> Selected</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Season Indicator Banner -->
+          <div id="calendarSeasonBanner" class="cal-season-banner">
+            <span id="calendarSeasonIcon" class="cal-season-icon">🌤️</span>
+            <div class="cal-season-info">
+              <span id="calendarSeasonTitle" class="cal-season-title">Tagaytay Weather Season</span>
+              <span id="calendarSeasonDesc" class="cal-season-desc">Seasonal microclimate demand profile</span>
             </div>
           </div>
 
@@ -64,8 +77,8 @@
             <div class="cal-weekday">Sat</div>
           </div>
 
-          <div id="customCalendarGrid" class="cal-days-grid" role="grid" aria-label="Condo Availability Calendar Grid">
-            <!-- Dynamically populated day cells -->
+          <div id="customCalendarGrid" class="cal-days-grid" role="grid" aria-label="Condo Availability & Pricing Calendar Grid">
+            <!-- Dynamically populated day cells with prices -->
           </div>
         </div>
       </div>
@@ -98,8 +111,9 @@
         </div>
       </div>
 
+      <!-- Dynamic Stay Summary & Savings Breakdown Card -->
       <div id="staySummaryCard" class="stay-summary-card" style="display:none;" aria-live="polite">
-        <div class="stay-details">
+        <div class="stay-header-row">
           <div class="stay-col">
             <span class="stay-label">Check-in</span>
             <span class="stay-value" id="summaryCheckIn">—</span>
@@ -111,20 +125,54 @@
           </div>
           <div class="stay-badge" id="summaryNights">0 nights</div>
         </div>
+
+        <div class="stay-pricing-box">
+          <div class="pricing-comparison-header">
+            <div>
+              <span class="pricing-label">Guaranteed Competitor Price Advantage</span>
+              <div class="pricing-subtext">Direct 10km Tagaytay 2BR market benchmark comparison</div>
+            </div>
+            <div id="summarySavingsBadge" class="price-savings-pill">-₱500 / night saved</div>
+          </div>
+
+          <div class="pricing-line-items">
+            <div class="price-line">
+              <span>Nearby 10km 2BR Market Benchmark:</span>
+              <span id="summaryMarketSubtotal" class="price-strike">₱0</span>
+            </div>
+            <div class="price-line">
+              <span>Unit 418 Dynamic Base Subtotal:</span>
+              <span id="summaryUnitSubtotal" class="price-highlight">₱0</span>
+            </div>
+            <div id="summaryDiscountRow" class="price-line price-discount-row" style="display: none;">
+              <span id="summaryDiscountLabel">Multi-Night Discount:</span>
+              <span id="summaryDiscountAmount" class="price-discount-text">-₱0</span>
+            </div>
+            <div id="summaryExtraGuestRow" class="price-line" style="display: none;">
+              <span id="summaryExtraGuestLabel">Extra Guest Fee (5-6 pax):</span>
+              <span id="summaryExtraGuestAmount">+₱0</span>
+            </div>
+            <div class="price-line price-total-row">
+              <span class="price-total-label">Total Confirmed Price:</span>
+              <span id="summaryTotalPrice" class="price-total-amount">₱0</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="form-group">
         <label for="guestCount">
           Number of Guests <span aria-hidden="true" style="color:#b91c1c;">*</span>
         </label>
-        <select id="guestCount" name="guestCount" required aria-required="true">
-          <option value="1">1 Guest</option>
-          <option value="2" selected>2 Guests</option>
-          <option value="3">3 Guests</option>
-          <option value="4">4 Guests</option>
-          <option value="5">5 Guests</option>
-          <option value="6">6 Guests (Max occupancy)</option>
+        <select id="guestCount" name="guestCount" required aria-required="true" onchange="onGuestCountChange()">
+          <option value="1">1 Guest (Base rate)</option>
+          <option value="2" selected>2 Guests (Base rate)</option>
+          <option value="3">3 Guests (Base rate)</option>
+          <option value="4">4 Guests (Base rate)</option>
+          <option value="5">5 Guests (+₱400/night extra pax fee)</option>
+          <option value="6">6 Guests (+₱800/night extra pax fee - Max occupancy)</option>
         </select>
+        <div class="field-hint">Base rate covers up to 4 guests. Guests 5–6 include extra fresh linens & floor/sofa setup.</div>
       </div>
 
       <div class="form-group">

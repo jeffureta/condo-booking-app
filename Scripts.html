@@ -2,30 +2,272 @@
   /**
    * Client-side Controller for Condominium Booking App.
    * Manages bespoke zero-dependency calendar grid rendering, interactive drag/click selection,
-   * form validation, and Google Apps Script backend submissions.
+   * zero-latency dynamic pricing calculations, form validation, and Google Apps Script submissions.
+   *
+   * STRICT HTMLSERVICE RULE: NO ES6 backticks and NO raw '//' in strings.
    */
   var CALENDAR_ID = '5e250418f97d2008bff93cc10a638b2aabe981af2d5e271b058eb8835dde2ae2@group.calendar.google.com';
+  var CONDO_UNIT_NAME = 'Unit 418 Serin East Tagaytay';
+  var CONDO_FULL_ADDRESS = 'Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, Tagaytay City, Cavite, 4120, Philippines';
+
   var currentReservation = null;
   var currentBookedRanges = [];
   var isInternalCalendarSync = false;
+  var currentStayQuote = null;
 
   // Calendar Grid State
-  var currentDisplayDate = new Date(); // Tracks currently displayed month/year
-  var selectionAnchor = null;         // Start date of drag or first click (YYYY-MM-DD)
-  var selectionHover = null;          // Currently hovered date during drag (YYYY-MM-DD)
-  var isDragging = false;             // True while mouse button is held down
+  var currentDisplayDate = new Date();
+  var selectionAnchor = null;
+  var selectionHover = null;
+  var isDragging = false;
 
   function toIso(d) {
     var y = d.getFullYear();
-    var m = String(d.getMonth() + 1).padStart(2, '0');
-    var day = String(d.getDate()).padStart(2, '0');
+    var m = String(d.getMonth() + 1);
+    if (m.length < 2) m = '0' + m;
+    var day = String(d.getDate());
+    if (day.length < 2) day = '0' + day;
     return y + '-' + m + '-' + day;
   }
 
   var todayStr = toIso(new Date());
 
+  /* ==========================================================================
+     ZERO-LATENCY DETERMINISTIC DYNAMIC PRICING ENGINE (ES5-COMPLIANT)
+     ========================================================================== */
+  var PH_HOLIDAYS_AND_EVENTS = {
+    '01-01': "New Year's Day",
+    '02-14': "Valentine's Day Peak",
+    '04-09': "Araw ng Kagitingan",
+    '05-01': "Labor Day",
+    '06-12': "Independence Day",
+    '08-21': "Ninoy Aquino Day",
+    '11-01': "All Saints' Day (Undas)",
+    '11-02': "All Souls' Day",
+    '11-30': "Bonifacio Day",
+    '12-08': "Immaculate Conception",
+    '12-24': "Christmas Eve",
+    '12-25': "Christmas Day",
+    '12-30': "Rizal Day",
+    '12-31': "New Year's Eve",
+    '2026-02-13': "Valentine's Weekend",
+    '2026-02-15': "Valentine's Weekend",
+    '2026-02-16': "Chinese New Year Eve",
+    '2026-02-17': "Chinese New Year",
+    '2026-03-20': "Eid'l Fitr",
+    '2026-04-02': "Maundy Thursday",
+    '2026-04-03': "Good Friday",
+    '2026-04-04': "Black Saturday",
+    '2026-04-05': "Easter Sunday",
+    '2026-05-02': "Labor Day Weekend",
+    '2026-05-03': "Labor Day Weekend",
+    '2026-05-27': "Eid'l Adha",
+    '2026-06-13': "Independence Day Weekend",
+    '2026-06-14': "Independence Day Weekend",
+    '2026-08-22': "Ninoy Aquino Weekend",
+    '2026-08-23': "Ninoy Aquino Weekend",
+    '2026-08-29': "National Heroes Weekend",
+    '2026-08-30': "National Heroes Weekend",
+    '2026-08-31': "National Heroes Day",
+    '2026-10-31': "Undas Weekend",
+    '2026-11-28': "Bonifacio Weekend",
+    '2026-11-29': "Bonifacio Weekend",
+    '2026-12-20': "Holiday Season Peak",
+    '2026-12-21': "Holiday Season Peak",
+    '2026-12-22': "Holiday Season Peak",
+    '2026-12-23': "Holiday Season Peak",
+    '2026-12-26': "Holiday Season Peak",
+    '2026-12-27': "Holiday Season Peak",
+    '2026-12-28': "Holiday Season Peak",
+    '2026-12-29': "Holiday Season Peak",
+    '2027-01-02': "New Year Weekend Peak",
+    '2027-01-03': "New Year Weekend Peak",
+    '2027-02-05': "Chinese New Year Eve",
+    '2027-02-06': "Chinese New Year",
+    '2027-02-07': "Chinese New Year Weekend",
+    '2027-02-13': "Valentine's Weekend",
+    '2027-02-15': "Valentine's Weekend",
+    '2027-03-25': "Maundy Thursday",
+    '2027-03-26': "Good Friday",
+    '2027-03-27': "Black Saturday",
+    '2027-03-28': "Easter Sunday",
+    '2027-04-10': "Araw ng Kagitingan Weekend",
+    '2027-04-11': "Araw ng Kagitingan Weekend",
+    '2027-08-28': "National Heroes Weekend",
+    '2027-08-29': "National Heroes Weekend",
+    '2027-08-30': "National Heroes Day",
+    '2027-10-30': "Undas Long Weekend",
+    '2027-10-31': "Undas Long Weekend",
+    '2027-12-20': "Holiday Season Peak",
+    '2027-12-21': "Holiday Season Peak",
+    '2027-12-22': "Holiday Season Peak",
+    '2027-12-23': "Holiday Season Peak",
+    '2027-12-26': "Holiday Season Peak",
+    '2027-12-27': "Holiday Season Peak",
+    '2027-12-28': "Holiday Season Peak",
+    '2027-12-29': "Holiday Season Peak"
+  };
+
+  function getSeasonForDate(dateStr) {
+    var month = parseInt(dateStr.slice(5, 7), 10);
+    if (month === 12 || month === 1 || month === 2) {
+      return {
+        code: 'AMIHAN_COOL',
+        icon: '❄️',
+        label: 'Cool Amihan Season (17–24°C)',
+        desc: 'Crisp breezes & clear Taal views. Peak staycation season.',
+        weekdayMult: 1.10,
+        weekendMult: 1.10
+      };
+    }
+    if (month >= 3 && month <= 5) {
+      return {
+        code: 'SUMMER_ESCAPE',
+        icon: '☀️',
+        label: 'Summer Ridge Escape',
+        desc: 'Sunny mountain breeze escaping Manila heat.',
+        weekdayMult: 1.05,
+        weekendMult: 1.05
+      };
+    }
+    if (month === 11) {
+      return {
+        code: 'BER_SHOULDER',
+        icon: '🌤️',
+        label: 'Ber-Months Shoulder Season',
+        desc: 'Cooling weather leading into December holidays.',
+        weekdayMult: 1.00,
+        weekendMult: 1.00
+      };
+    }
+    return {
+      code: 'HABAGAT_RAINY',
+      icon: '🌧️',
+      label: 'Habagat Cozy Rainy Season',
+      desc: 'Misty fog & quiet indoor staycation discounts.',
+      weekdayMult: 0.90,
+      weekendMult: 0.95
+    };
+  }
+
+  function getHolidayOrEvent(dateStr) {
+    if (PH_HOLIDAYS_AND_EVENTS[dateStr]) {
+      return PH_HOLIDAYS_AND_EVENTS[dateStr];
+    }
+    var mmDd = dateStr.slice(5, 10);
+    if (PH_HOLIDAYS_AND_EVENTS[mmDd]) {
+      return PH_HOLIDAYS_AND_EVENTS[mmDd];
+    }
+    return null;
+  }
+
+  function calculateNightlyPrice(dateStr) {
+    var holiday = getHolidayOrEvent(dateStr);
+    var season = getSeasonForDate(dateStr);
+    var dObj = new Date(dateStr + 'T00:00:00');
+    var dayOfWeek = dObj.getDay();
+    var isWeekend = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
+
+    var tier = 'WEEKDAY';
+    var tierLabel = 'Weekday';
+    var baseMarket = 5000;
+    var mult = season.weekdayMult;
+
+    if (holiday) {
+      tier = 'PEAK';
+      tierLabel = holiday;
+      baseMarket = 8000;
+      mult = 1.0;
+    } else if (isWeekend) {
+      tier = 'WEEKEND';
+      tierLabel = 'Weekend';
+      baseMarket = 6200;
+      mult = season.weekendMult;
+    }
+
+    var marketRate = Math.round((baseMarket * mult) / 50) * 50;
+    var unitRate = marketRate - 500; // Guaranteed -₱500/night savings
+
+    return {
+      dateStr: dateStr,
+      tier: tier,
+      tierLabel: tierLabel,
+      season: season,
+      marketRate: marketRate,
+      unitRate: unitRate,
+      savings: 500
+    };
+  }
+
+  function calculateStayQuote(checkInStr, checkOutStr, guestCount) {
+    if (!checkInStr || !checkOutStr || checkOutStr <= checkInStr) return null;
+
+    var inDate = new Date(checkInStr + 'T00:00:00');
+    var outDate = new Date(checkOutStr + 'T00:00:00');
+    var diffMs = outDate.getTime() - inDate.getTime();
+    var nights = Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+    if (nights === 0) return null;
+
+    var guests = Math.min(6, Math.max(1, parseInt(guestCount, 10) || 2));
+    var extraGuests = Math.max(0, guests - 4);
+
+    var marketSubtotal = 0;
+    var baseUnitSubtotal = 0;
+    var nightlyList = [];
+
+    for (var i = 0; i < nights; i++) {
+      var cur = new Date(inDate.getTime() + i * (24 * 60 * 60 * 1000));
+      var iso = toIso(cur);
+      var nInfo = calculateNightlyPrice(iso);
+      nightlyList.push(nInfo);
+      marketSubtotal += nInfo.marketRate;
+      baseUnitSubtotal += nInfo.unitRate;
+    }
+
+    var discountRate = 0;
+    var discountLabel = '';
+    if (nights >= 7) {
+      discountRate = 0.10;
+      discountLabel = 'Weekly Staycation (10% Off)';
+    } else if (nights >= 3) {
+      discountRate = 0.05;
+      discountLabel = 'Extended Staycation (5% Off)';
+    }
+
+    var discountAmount = Math.round(baseUnitSubtotal * discountRate);
+    var extraGuestFee = extraGuests * 400 * nights;
+    var totalPrice = baseUnitSubtotal - discountAmount + extraGuestFee;
+    var competitorSavings = 500 * nights;
+    var totalSavings = competitorSavings + discountAmount;
+
+    return {
+      checkIn: checkInStr,
+      checkOut: checkOutStr,
+      nights: nights,
+      guestCount: guests,
+      extraGuests: extraGuests,
+      marketSubtotal: marketSubtotal,
+      baseUnitSubtotal: baseUnitSubtotal,
+      competitorSavings: competitorSavings,
+      discountRate: discountRate,
+      discountLabel: discountLabel,
+      discountAmount: discountAmount,
+      extraGuestFee: extraGuestFee,
+      totalPrice: totalPrice,
+      totalSavings: totalSavings,
+      averageNightly: Math.round(totalPrice / nights),
+      nightlyList: nightlyList
+    };
+  }
+
+  function formatPhp(amount) {
+    return '₱' + Math.round(amount).toLocaleString('en-US');
+  }
+
+  /* ==========================================================================
+     APP LIFECYCLE & AVAILABILITY
+     ========================================================================== */
   function bootstrapApp() {
-    // Set min date on date inputs to today
     var inInput = document.getElementById('checkInDate');
     var outInput = document.getElementById('checkOutDate');
     if (inInput) inInput.min = todayStr;
@@ -46,7 +288,7 @@
     } else {
       // Local preview fallback mock
       onBookedRangesLoaded([
-        { from: '2026-11-10', to: '2026-11-13', title: 'Existing Reservation' }
+        { from: '2026-11-18', to: '2026-11-20', title: 'Reserved Guest' }
       ]);
     }
   }
@@ -94,17 +336,18 @@
 
   function onBookedRangesError(err) {
     showCalendarError(err);
-    // Render the month grid so the user can at least view the calendar days
     onBookedRangesLoaded([]);
   }
 
-  // Handle both standard DOM loading and Google Apps Script sandboxed iframe execution
   if (document.readyState === 'interactive' || document.readyState === 'complete') {
     bootstrapApp();
   } else {
     window.addEventListener('DOMContentLoaded', bootstrapApp);
   }
 
+  /* ==========================================================================
+     CUSTOM CALENDAR GRID RENDERING & SELECTION CONTROLLER
+     ========================================================================== */
   function initCustomCalendar() {
     var prevBtn = document.getElementById('calPrevBtn');
     var nextBtn = document.getElementById('calNextBtn');
@@ -123,7 +366,6 @@
       });
     }
 
-    // Global mouseup to guarantee drag ends even if cursor releases outside grid
     window.addEventListener('mouseup', function() {
       if (isDragging) {
         finalizeSelection();
@@ -142,15 +384,16 @@
       var year = currentDisplayDate.getFullYear();
       var month = currentDisplayDate.getMonth();
 
-      // Update Header (e.g., "November 2026")
       var monthName = currentDisplayDate.toLocaleString('default', { month: 'long' });
       titleEl.textContent = monthName + ' ' + year;
 
+      // Update Season Indicator Banner
+      updateSeasonBanner(currentDisplayDate);
+
       gridEl.innerHTML = '';
 
-      // Calculate first day of month and grid start
       var firstDay = new Date(year, month, 1);
-      var startDayOfWeek = firstDay.getDay(); // 0 = Sunday
+      var startDayOfWeek = firstDay.getDay();
       var startDate = new Date(year, month, 1 - startDayOfWeek);
 
       var inVal = document.getElementById('checkInDate').value;
@@ -162,16 +405,31 @@
         var dayNum = cellDate.getDate();
         var isCurrentMonth = cellDate.getMonth() === month;
 
+        var priceInfo = calculateNightlyPrice(iso);
+
         var cell = document.createElement('div');
         cell.className = 'cal-cell';
         cell.dataset.date = iso;
         cell.setAttribute('role', 'gridcell');
         cell.setAttribute('tabindex', '0');
-        cell.setAttribute('aria-label', iso);
 
-        var numSpan = document.createElement('span');
-        numSpan.textContent = dayNum;
-        cell.appendChild(numSpan);
+        if (priceInfo.tier === 'PEAK') {
+          cell.classList.add('cal-peak-date');
+        }
+
+        var labelText = iso + ': ' + formatPhp(priceInfo.unitRate) + ' / night (' + priceInfo.tierLabel + ', ' + priceInfo.season.label + ')';
+        cell.setAttribute('aria-label', labelText);
+        cell.setAttribute('title', labelText);
+
+        var daySpan = document.createElement('span');
+        daySpan.className = 'cal-cell-day';
+        daySpan.textContent = dayNum;
+        cell.appendChild(daySpan);
+
+        var priceSpan = document.createElement('span');
+        priceSpan.className = 'cal-cell-price';
+        priceSpan.textContent = formatPhp(priceInfo.unitRate);
+        cell.appendChild(priceSpan);
 
         if (!isCurrentMonth) {
           cell.classList.add('cal-other-month');
@@ -181,13 +439,11 @@
           cell.classList.add('cal-today');
         }
 
-        // Check if date is in the past
         if (iso < todayStr) {
           cell.classList.add('cal-disabled');
           cell.setAttribute('aria-disabled', 'true');
         }
 
-        // Check if date is booked (turnover on checkout day is allowed for check-in)
         var isOccupied = currentBookedRanges.some(function(r) {
           return iso >= r.from && iso < r.to;
         });
@@ -196,10 +452,7 @@
           cell.setAttribute('aria-disabled', 'true');
         }
 
-        // Apply active selection or hover-drag range classes
         applyCellSelectionClasses(cell, iso, inVal, outVal);
-
-        // Event Listeners for Click and Continuous Drag
         attachCellEvents(cell, iso);
 
         gridEl.appendChild(cell);
@@ -210,11 +463,22 @@
     }
   }
 
+  function updateSeasonBanner(d) {
+    var iso = toIso(d);
+    var season = getSeasonForDate(iso);
+    var iconEl = document.getElementById('calendarSeasonIcon');
+    var titleEl = document.getElementById('calendarSeasonTitle');
+    var descEl = document.getElementById('calendarSeasonDesc');
+
+    if (iconEl) iconEl.textContent = season.icon;
+    if (titleEl) titleEl.textContent = season.label + ' • Unit 418 Dynamic Rate';
+    if (descEl) descEl.textContent = season.desc;
+  }
+
   function applyCellSelectionClasses(cell, iso, inVal, outVal) {
     var activeStart = inVal;
     var activeEnd = outVal;
 
-    // If currently dragging, preview the dynamic range
     if (isDragging && selectionAnchor && selectionHover) {
       if (selectionAnchor <= selectionHover) {
         activeStart = selectionAnchor;
@@ -246,7 +510,6 @@
       return iso >= r.from && iso < r.to;
     });
 
-    // MOUSE DOWN: start selection or drag
     cell.addEventListener('mousedown', function(e) {
       e.preventDefault();
       if (isPast || isOccupied) return;
@@ -257,14 +520,12 @@
       highlightPreviewRange(selectionAnchor, selectionHover);
     });
 
-    // MOUSE ENTER: update range while dragging
     cell.addEventListener('mouseenter', function() {
       if (!isDragging || !selectionAnchor) return;
       selectionHover = iso;
       highlightPreviewRange(selectionAnchor, selectionHover);
     });
 
-    // TOUCH SUPPORT
     cell.addEventListener('touchstart', function(e) {
       if (isPast || isOccupied) return;
       isDragging = true;
@@ -290,7 +551,6 @@
       }
     });
 
-    // KEYBOARD ACCESSIBILITY: Enter / Space to pick date
     cell.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -302,9 +562,8 @@
 
   function highlightPreviewRange(anchor, hover) {
     if (!anchor || !hover) return;
-    var range = anchor <= hover ? [anchor, hover] : [hover, anchor];
-    var start = range[0];
-    var end = range[1];
+    var start = anchor <= hover ? anchor : hover;
+    var end = anchor <= hover ? hover : anchor;
 
     var allCells = document.querySelectorAll('.cal-cell');
     allCells.forEach(function(c) {
@@ -324,15 +583,9 @@
     isDragging = false;
     if (!selectionAnchor || !selectionHover) return;
 
-    var checkIn = selectionAnchor;
-    var checkOut = selectionHover;
+    var checkIn = selectionAnchor <= selectionHover ? selectionAnchor : selectionHover;
+    var checkOut = selectionAnchor <= selectionHover ? selectionHover : selectionAnchor;
 
-    if (selectionAnchor > selectionHover) {
-      checkIn = selectionHover;
-      checkOut = selectionAnchor;
-    }
-
-    // If single day was clicked/dragged, wait for second click or set checkIn
     if (checkIn === checkOut) {
       handleCellClick(checkIn);
       return;
@@ -348,7 +601,6 @@
     var outInput = document.getElementById('checkOutDate');
 
     if (!inInput.value || (inInput.value && outInput.value)) {
-      // First click: set check-in
       inInput.value = iso;
       outInput.value = '';
       outInput.min = iso;
@@ -356,10 +608,8 @@
       renderCalendar();
       announceStatus('Selected check-in date: ' + iso + '. Now select check-out date.');
     } else {
-      // Second click: set check-out
       var existingIn = inInput.value;
       if (iso <= existingIn) {
-        // If clicked date is earlier, treat it as new check-in date
         inInput.value = iso;
         outInput.value = '';
         outInput.min = iso;
@@ -397,7 +647,7 @@
     outInput.min = checkIn;
     isInternalCalendarSync = false;
 
-    updateStaySummary(new Date(checkIn + 'T00:00:00'), new Date(checkOut + 'T00:00:00'));
+    updateStaySummary();
     announceStatus('Selected check-in: ' + checkIn + ', check-out: ' + checkOut);
     renderCalendar();
   }
@@ -435,12 +685,20 @@
       }
 
       document.getElementById('statusMessage').textContent = "";
-      updateStaySummary(new Date(inVal + 'T00:00:00'), new Date(outVal + 'T00:00:00'));
+      updateStaySummary();
       announceStatus('Selected check-in: ' + inVal + ', check-out: ' + outVal);
       renderCalendar();
     } else {
       hideStaySummary();
       renderCalendar();
+    }
+  }
+
+  function onGuestCountChange() {
+    var inVal = document.getElementById('checkInDate').value;
+    var outVal = document.getElementById('checkOutDate').value;
+    if (inVal && outVal && outVal > inVal) {
+      updateStaySummary();
     }
   }
 
@@ -450,19 +708,74 @@
     });
   }
 
-  function updateStaySummary(startDate, endDate) {
+  function updateStaySummary() {
+    var inVal = document.getElementById('checkInDate').value;
+    var outVal = document.getElementById('checkOutDate').value;
+    var guestCount = document.getElementById('guestCount').value;
     var card = document.getElementById('staySummaryCard');
+
+    if (!inVal || !outVal || outVal <= inVal || !card) {
+      hideStaySummary();
+      return;
+    }
+
+    var quote = calculateStayQuote(inVal, outVal, guestCount);
+    currentStayQuote = quote;
+    if (!quote) {
+      hideStaySummary();
+      return;
+    }
+
+    var startDate = new Date(inVal + 'T00:00:00');
+    var endDate = new Date(outVal + 'T00:00:00');
+    var opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+
     var inEl = document.getElementById('summaryCheckIn');
     var outEl = document.getElementById('summaryCheckOut');
     var nightsEl = document.getElementById('summaryNights');
 
-    var opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
-    inEl.textContent = startDate.toLocaleDateString(undefined, opts);
-    outEl.textContent = endDate.toLocaleDateString(undefined, opts);
+    if (inEl) inEl.textContent = startDate.toLocaleDateString(undefined, opts);
+    if (outEl) outEl.textContent = endDate.toLocaleDateString(undefined, opts);
+    if (nightsEl) nightsEl.textContent = quote.nights === 1 ? '1 night' : (quote.nights + ' nights');
 
-    var diffTime = Math.abs(endDate - startDate);
-    var nights = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    nightsEl.textContent = nights === 1 ? '1 night' : (nights + ' nights');
+    // Populate Pricing Breakdown Card
+    var marketEl = document.getElementById('summaryMarketSubtotal');
+    var unitEl = document.getElementById('summaryUnitSubtotal');
+    var totalEl = document.getElementById('summaryTotalPrice');
+    var savingsBadge = document.getElementById('summarySavingsBadge');
+    var discountRow = document.getElementById('summaryDiscountRow');
+    var discountLabel = document.getElementById('summaryDiscountLabel');
+    var discountAmount = document.getElementById('summaryDiscountAmount');
+    var extraRow = document.getElementById('summaryExtraGuestRow');
+    var extraLabel = document.getElementById('summaryExtraGuestLabel');
+    var extraAmount = document.getElementById('summaryExtraGuestAmount');
+
+    if (marketEl) marketEl.textContent = formatPhp(quote.marketSubtotal);
+    if (unitEl) unitEl.textContent = formatPhp(quote.baseUnitSubtotal);
+    if (totalEl) totalEl.textContent = formatPhp(quote.totalPrice);
+    if (savingsBadge) {
+      savingsBadge.textContent = 'Save ' + formatPhp(quote.totalSavings) + ' vs. 10km market';
+    }
+
+    if (discountRow) {
+      if (quote.discountAmount > 0) {
+        if (discountLabel) discountLabel.textContent = quote.discountLabel + ':';
+        if (discountAmount) discountAmount.textContent = '-' + formatPhp(quote.discountAmount);
+        discountRow.style.display = 'flex';
+      } else {
+        discountRow.style.display = 'none';
+      }
+    }
+
+    if (extraRow) {
+      if (quote.extraGuestFee > 0) {
+        if (extraLabel) extraLabel.textContent = 'Extra Guest Fee (' + quote.extraGuests + ' extra pax):';
+        if (extraAmount) extraAmount.textContent = '+' + formatPhp(quote.extraGuestFee);
+        extraRow.style.display = 'flex';
+      } else {
+        extraRow.style.display = 'none';
+      }
+    }
 
     card.style.display = 'flex';
   }
@@ -470,8 +783,12 @@
   function hideStaySummary() {
     var card = document.getElementById('staySummaryCard');
     if (card) card.style.display = 'none';
+    currentStayQuote = null;
   }
 
+  /* ==========================================================================
+     RESERVATION SUBMISSION & CONFIRMATION
+     ========================================================================== */
   function submitReservation(e) {
     e.preventDefault();
     var statusMsg = document.getElementById('statusMessage');
@@ -515,16 +832,16 @@
       guestName: name,
       guestEmail: email,
       guestPhone: phone,
-      guestCount: parseInt(guestCount, 10)
+      guestCount: parseInt(guestCount, 10),
+      clientQuote: currentStayQuote
     };
 
     var submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span>Processing reservation...</span>';
-    announceStatus("Submitting reservation to Google Calendar...");
+    announceStatus("Submitting staycation reservation...");
 
     if (typeof google !== 'undefined' && google.script && google.script.run) {
-      // Calls createBooking (and processBooking alias is also available on backend)
       google.script.run
         .withSuccessHandler(function(res) {
           resetSubmitButton();
@@ -545,14 +862,25 @@
       // Local preview / mock fallback
       setTimeout(function() {
         resetSubmitButton();
-        var mockRef = 'LOCAL-' + Math.floor(100000 + Math.random() * 900000);
-        handleBookingSuccess({ success: true, referenceId: mockRef }, payload);
+        var mockRef = 'CND-' + Math.floor(1000 + Math.random() * 9000);
+        var mockQuote = calculateStayQuote(payload.startDate, payload.endDate, payload.guestCount);
+        handleBookingSuccess({
+          success: true,
+          referenceId: mockRef,
+          totalPrice: mockQuote ? mockQuote.totalPrice : null,
+          pricing: mockQuote
+        }, payload);
       }, 500);
     }
   }
 
   function handleBookingSuccess(res, data) {
     var ref = res.referenceId || res.refId;
+    var quote = res.pricing || currentStayQuote || calculateStayQuote(data.startDate, data.endDate, data.guestCount);
+    var totalAmount = quote ? quote.totalPrice : (res.totalPrice || null);
+    var totalStr = totalAmount ? formatPhp(totalAmount) : 'N/A';
+    var savingsStr = quote ? formatPhp(quote.totalSavings) : '₱0';
+
     currentReservation = {
       startDate: data.startDate,
       endDate: data.endDate,
@@ -560,7 +888,8 @@
       guestEmail: data.guestEmail,
       guestPhone: data.guestPhone,
       guestCount: data.guestCount,
-      referenceId: ref
+      referenceId: ref,
+      totalPrice: totalAmount
     };
 
     document.getElementById('bookingForm').style.display = 'none';
@@ -569,13 +898,15 @@
 
     document.getElementById('confText').innerHTML = 
       'Thank you, <strong>' + escapeHtml(data.guestName) + '</strong>! Your reservation for <strong>' + escapeHtml(String(data.guestCount)) + ' guest(s)</strong> ' +
-      'from <strong>' + data.startDate + '</strong> to <strong>' + data.endDate + '</strong> is confirmed.<br><br>' +
+      'at <strong>' + CONDO_UNIT_NAME + '</strong> from <strong>' + data.startDate + '</strong> to <strong>' + data.endDate + '</strong> is confirmed.<br><br>' +
+      '<strong>Location:</strong> ' + CONDO_FULL_ADDRESS + '<br>' +
       '<strong>Reference ID:</strong> #' + ref + '<br>' +
-      'A confirmation email has been dispatched to <em>' + escapeHtml(data.guestEmail) + '</em>.<br>' +
-      'Your stay has been recorded in our Google Calendar.';
+      '<strong>Confirmed Total:</strong> ' + totalStr + ' <em>(Guaranteed savings: ' + savingsStr + ' vs 10km Tagaytay market)</em><br><br>' +
+      'A confirmation email with full staycation check-in details has been dispatched to <em>' + escapeHtml(data.guestEmail) + '</em>.<br>' +
+      'Your stay is scheduled in Google Calendar.';
 
-    setupGoogleCalendarLink(ref);
-    announceStatus('Reservation confirmed! Your reference ID is ' + ref + '.');
+    setupGoogleCalendarLink(ref, totalAmount);
+    announceStatus('Reservation confirmed! Reference ID is ' + ref + '.');
     confBox.scrollIntoView({ behavior: 'smooth' });
   }
 
@@ -593,18 +924,18 @@
     });
   }
 
-  function setupGoogleCalendarLink(refId) {
+  function setupGoogleCalendarLink(refId, totalPrice) {
     var inVal = document.getElementById('checkInDate').value;
     var outVal = document.getElementById('checkOutDate').value;
     if (!inVal || !outVal) return;
 
     var s = inVal.replace(/-/g, '');
     var e = outVal.replace(/-/g, '');
-    var title = encodeURIComponent("Stay at 2-Bedroom Condominium (Ref #" + refId + ")");
-    var details = encodeURIComponent("Condo Reservation Ref #" + refId + "\nCheck-in: 3:00 PM\nCheck-out: 11:00 AM");
-    var loc = encodeURIComponent("418 Serin Tagaytay Condominium");
+    var priceDetail = totalPrice ? ('\\nTotal: ' + formatPhp(totalPrice)) : '';
+    var title = encodeURIComponent("Staycation: Unit 418 Serin East Tagaytay (Ref #" + refId + ")");
+    var details = encodeURIComponent("Unit 418 Serin East Tagaytay\\nRef #" + refId + priceDetail + "\\nCheck-in: 3:00 PM\\nCheck-out: 11:00 AM\\nAddress: " + CONDO_FULL_ADDRESS);
+    var loc = encodeURIComponent(CONDO_FULL_ADDRESS);
 
-    // Construct protocol safely to avoid ES5 comment-stripping hazards
     var proto = 'https:' + '//';
     var url = proto + 'calendar.google.com/calendar/render?action=TEMPLATE&text=' + title + '&dates=' + s + 'T150000/' + e + 'T110000&details=' + details + '&location=' + loc;
     var btn = document.getElementById('addToGoogleCalBtn');
@@ -617,6 +948,7 @@
     var outVal = currentReservation.endDate.replace(/-/g, '');
     var ref = currentReservation.referenceId;
     var slashSlash = '/' + '/';
+    var priceLine = currentReservation.totalPrice ? ('\\nTotal: ' + formatPhp(currentReservation.totalPrice)) : '';
 
     var icsContent = [
       "BEGIN:VCALENDAR",
@@ -627,9 +959,9 @@
       "DTSTAMP:" + toIso(new Date()).replace(/-/g, '') + "T000000Z",
       "DTSTART:" + inVal + "T150000",
       "DTEND:" + outVal + "T110000",
-      "SUMMARY:Stay at 2-Bedroom Condominium (Ref #" + ref + ")",
-      "DESCRIPTION:Condominium Reservation Ref #" + ref + "\\nGuest: " + currentReservation.guestName + "\\nGuests: " + currentReservation.guestCount,
-      "LOCATION:418 Serin Tagaytay Condominium",
+      "SUMMARY:Staycation: Unit 418 Serin East Tagaytay (Ref #" + ref + ")",
+      "DESCRIPTION:Condo Staycation Ref #" + ref + "\\nGuest: " + currentReservation.guestName + "\\nGuests: " + currentReservation.guestCount + priceLine + "\\nAddress: " + CONDO_FULL_ADDRESS,
+      "LOCATION:" + CONDO_FULL_ADDRESS,
       "STATUS:CONFIRMED",
       "END:VEVENT",
       "END:VCALENDAR"
@@ -638,7 +970,7 @@
     var blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     var link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
-    link.setAttribute('download', 'condo-booking-' + ref + '.ics');
+    link.setAttribute('download', 'condo-staycation-' + ref + '.ics');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
