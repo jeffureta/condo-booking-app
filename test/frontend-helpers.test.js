@@ -4,7 +4,8 @@ import {
   escapeHtml,
   buildGoogleCalendarTemplateUrl,
   buildIcsContent,
-  validateGuestFormPayload
+  validateGuestFormPayload,
+  FULL_CONDO_ADDRESS
 } from '../calendar-utils.js';
 
 describe('Frontend Helper & Client Logic (TDD)', () => {
@@ -16,21 +17,25 @@ describe('Frontend Helper & Client Logic (TDD)', () => {
     assert.equal(escapeHtml(''), '');
   });
 
-  test('buildGoogleCalendarTemplateUrl constructs proper web Google Calendar link', () => {
-    const url = buildGoogleCalendarTemplateUrl('REF123', '2026-12-01', '2026-12-05');
+  test('buildGoogleCalendarTemplateUrl constructs proper web Google Calendar link with Unit 418 address and pricing', () => {
+    const url = buildGoogleCalendarTemplateUrl('REF123', '2026-12-01', '2026-12-05', 20000);
     assert.ok(url.startsWith('https://calendar.google.com/calendar/render?action=TEMPLATE'));
     assert.ok(url.includes('dates=20261201T150000%2F20261205T110000') || url.includes('dates=20261201T150000/20261205T110000'));
     assert.ok(url.includes('REF123'));
-    assert.ok(url.includes('Serin%20Tagaytay') || url.includes('Serin Tagaytay'));
+    assert.ok(url.includes('Unit%20418') || url.includes('Unit 418'));
+    assert.ok(url.includes('Serin%20East%20Tagaytay') || url.includes('Serin East Tagaytay'));
+    assert.ok(url.includes('Silang%20Crossing%20East') || url.includes('Silang Crossing East'));
+    assert.ok(url.includes('4120'));
   });
 
-  test('buildIcsContent generates valid RFC 5545 iCalendar data', () => {
+  test('buildIcsContent generates valid RFC 5545 iCalendar data with full Unit 418 details', () => {
     const reservation = {
       referenceId: 'CND-8822',
       startDate: '2026-12-01',
       endDate: '2026-12-05',
       guestName: 'Jane Doe',
-      guestCount: 2
+      guestCount: 2,
+      totalPrice: 20000
     };
 
     const ics = buildIcsContent(reservation);
@@ -40,7 +45,9 @@ describe('Frontend Helper & Client Logic (TDD)', () => {
     assert.ok(ics.includes('UID:condo-CND-8822@booking.local'));
     assert.ok(ics.includes('DTSTART:20261201T150000'));
     assert.ok(ics.includes('DTEND:20261205T110000'));
-    assert.ok(ics.includes('SUMMARY:Stay at 2-Bedroom Condominium (Ref #CND-8822)'));
+    assert.ok(ics.includes('SUMMARY:Staycation: Unit 418 Serin East Tagaytay (Ref #CND-8822)'));
+    assert.ok(ics.includes(FULL_CONDO_ADDRESS));
+    assert.ok(ics.includes('Total: ₱20,000'));
     assert.ok(ics.includes('END:VEVENT'));
     assert.ok(ics.includes('END:VCALENDAR'));
   });

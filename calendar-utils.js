@@ -313,20 +313,24 @@ export function escapeHtml(str) {
   );
 }
 
+export const FULL_CONDO_ADDRESS = 'Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, Tagaytay City, Cavite, 4120, Philippines';
+
 /**
  * Builds the direct Google Calendar web template link for "Add to Calendar".
  *
  * @param {string} refId - Booking reference ID
  * @param {string} checkInDate - YYYY-MM-DD
  * @param {string} checkOutDate - YYYY-MM-DD
+ * @param {string|number} [totalPrice] - Total confirmed price
  * @returns {string} Google Calendar Add URL
  */
-export function buildGoogleCalendarTemplateUrl(refId, checkInDate, checkOutDate) {
+export function buildGoogleCalendarTemplateUrl(refId, checkInDate, checkOutDate, totalPrice) {
   const s = String(checkInDate).replace(/-/g, '');
   const e = String(checkOutDate).replace(/-/g, '');
-  const title = encodeURIComponent(`Stay at 2-Bedroom Condominium (Ref #${refId})`);
-  const details = encodeURIComponent(`Condo Reservation Ref #${refId}\nCheck-in: 3:00 PM\nCheck-out: 11:00 AM`);
-  const loc = encodeURIComponent("418 Serin Tagaytay Condominium");
+  const priceInfo = totalPrice ? `\nTotal: ₱${Math.round(totalPrice).toLocaleString('en-US')}` : '';
+  const title = encodeURIComponent(`Staycation: Unit 418 Serin East Tagaytay (Ref #${refId})`);
+  const details = encodeURIComponent(`Condo Staycation Ref #${refId}${priceInfo}\nCheck-in: 3:00 PM\nCheck-out: 11:00 AM\nAddress: ${FULL_CONDO_ADDRESS}`);
+  const loc = encodeURIComponent(FULL_CONDO_ADDRESS);
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${s}T150000/${e}T110000&details=${details}&location=${loc}`;
 }
 
@@ -341,6 +345,7 @@ export function buildIcsContent(reservation) {
   const outVal = String(reservation.endDate).replace(/-/g, '');
   const ref = reservation.referenceId;
   const todayIso = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const priceDesc = reservation.totalPrice ? `\\nTotal: ₱${Math.round(reservation.totalPrice).toLocaleString('en-US')}` : '';
 
   return [
     "BEGIN:VCALENDAR",
@@ -351,9 +356,9 @@ export function buildIcsContent(reservation) {
     `DTSTAMP:${todayIso}T000000Z`,
     `DTSTART:${inVal}T150000`,
     `DTEND:${outVal}T110000`,
-    `SUMMARY:Stay at 2-Bedroom Condominium (Ref #${ref})`,
-    `DESCRIPTION:Condominium Reservation Ref #${ref}\\nGuest: ${reservation.guestName}\\nGuests: ${reservation.guestCount}`,
-    `LOCATION:418 Serin Tagaytay Condominium`,
+    `SUMMARY:Staycation: Unit 418 Serin East Tagaytay (Ref #${ref})`,
+    `DESCRIPTION:Condo Staycation Ref #${ref}\\nGuest: ${reservation.guestName}\\nGuests: ${reservation.guestCount}${priceDesc}\\nAddress: ${FULL_CONDO_ADDRESS}`,
+    `LOCATION:${FULL_CONDO_ADDRESS}`,
     "STATUS:CONFIRMED",
     "END:VEVENT",
     "END:VCALENDAR"
