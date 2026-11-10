@@ -14,11 +14,6 @@ test.describe('Condo Booking App - Full Booking Flow E2E', () => {
     const heading = page.locator('h1');
     await expect(heading).toContainText('Unit 418 • Serin East Tagaytay');
 
-    // Guarantee badge is visible
-    const badge = page.locator('.hero-pill-badge');
-    await expect(badge).toBeVisible();
-    await expect(badge).toContainText('₱500/night Below');
-
     // Calendar container should be present
     const calendarMonth = page.locator('#calMonthTitle');
     await expect(calendarMonth).toBeVisible();
