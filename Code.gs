@@ -21,7 +21,7 @@ function doGet(e) {
   return template.evaluate()
     .setTitle('Book 2-Bedroom Condominium')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL) // Required for Google Sites iframe embedding
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
 }
 
 /**
