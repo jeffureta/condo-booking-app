@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Condo Booking App - Full Booking Flow E2E', () => {
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }) => {
+    // Reset mock backend bookings before each test for clean isolation
+    await request.post('/api/mock/reset');
     // Navigate to local dev server (backed by dev-server.js & GAS mocks)
     await page.goto('/');
   });
@@ -77,5 +79,49 @@ test.describe('Condo Booking App - Full Booking Flow E2E', () => {
     const statusMessage = page.locator('#statusMessage');
     await expect(statusMessage).toBeVisible();
     await expect(statusMessage).toContainText(/Please select both a check-in and check-out date/i);
+  });
+
+  test('interacts with Unit 418 Client-Side AI Concierge and applies dates via 1-tap action', async ({ page }) => {
+    // Open AI Chat Drawer
+    const launcher = page.locator('#aiChatLauncher');
+    await expect(launcher).toBeVisible();
+    await launcher.click();
+
+    const drawer = page.locator('#aiChatDrawer');
+    await expect(drawer).toBeVisible();
+
+    // Click quick chip "Are dogs allowed?"
+    const dogChip = page.locator('button:has-text("Are dogs allowed?")');
+    await dogChip.click();
+
+    // Verify AI response bubble appeared in the message log
+    const lastBotMsg = page.locator('.ai-msg-bot .ai-msg-bubble').last();
+    await expect(lastBotMsg).toContainText(/pet|dog/i);
+
+    // Ask in Taglish about cooking
+    const input = page.locator('#aiChatInput');
+    await input.fill('Pwede ba mag-cook ng breakfast?');
+    await page.locator('#aiChatSendBtn').click();
+
+    await expect(page.locator('.ai-msg-bot .ai-msg-bubble').last()).toContainText(/light cooking/i);
+
+    // Ask for date quote in January 2027 (avoiding any booked dates)
+    await input.fill('Is 2027-01-15 to 2027-01-18 available for 3 guests?');
+    await page.locator('#aiChatSendBtn').click();
+
+    // Check for 1-tap Apply action button
+    const applyBtn = page.locator('.ai-apply-booking-btn').last();
+    await expect(applyBtn).toBeVisible();
+    await applyBtn.click();
+
+    // Drawer should close and form inputs should be auto-filled
+    await expect(drawer).toBeHidden();
+    await expect(page.locator('#checkInDate')).toHaveValue('2027-01-15');
+    await expect(page.locator('#checkOutDate')).toHaveValue('2027-01-18');
+    await expect(page.locator('#guestCount')).toHaveValue('3');
+
+    // Summary card should be visible
+    const staySummaryCard = page.locator('#staySummaryCard');
+    await expect(staySummaryCard).toBeVisible();
   });
 });

@@ -232,6 +232,57 @@
   </main>
 </div>
 
+<!-- Floating Client-Side AI Guest-Relations & Booking Agent -->
+<button type="button" id="aiChatLauncher" class="ai-chat-launcher" aria-label="Open Unit 418 AI Concierge Chat" aria-expanded="false" aria-controls="aiChatDrawer" onclick="toggleAiChatDrawer()">
+  <span class="ai-launcher-icon" aria-hidden="true">💬</span>
+  <span class="ai-launcher-text">Ask Unit 418 AI</span>
+</button>
+
+<div id="aiChatDrawer" class="ai-chat-drawer" role="dialog" aria-modal="true" aria-labelledby="aiChatTitle" style="display: none;">
+  <div class="ai-chat-header">
+    <div class="ai-header-info">
+      <div class="ai-header-badge-row">
+        <span class="ai-status-dot" aria-hidden="true"></span>
+        <span class="ai-header-badge">Local In-Browser AI • 100% Free</span>
+      </div>
+      <h2 id="aiChatTitle" class="ai-chat-title">Unit 418 AI Concierge</h2>
+      <div class="ai-chat-subtitle">English • Tagalog • Taglish</div>
+    </div>
+    <button type="button" id="aiChatCloseBtn" class="ai-chat-close-btn" aria-label="Close AI Concierge Chat" onclick="toggleAiChatDrawer(false)">
+      ✕
+    </button>
+  </div>
+
+  <div id="aiChatMessages" class="ai-chat-messages" role="log" aria-live="polite">
+    <div class="ai-msg ai-msg-bot">
+      <div class="ai-msg-bubble">
+        👋 Kumusta! I am your Unit 418 Serin East Tagaytay AI concierge. Ask me anything about our staycation rules (e.g. <em>"are dogs allowed?"</em>, <em>"can we cook?"</em>) or check dates and pricing!
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-quick-chips" aria-label="Quick questions">
+    <button type="button" class="ai-chip-btn" onclick="sendQuickQuestion('Are dogs allowed?')">🐶 Are dogs allowed?</button>
+    <button type="button" class="ai-chip-btn" onclick="sendQuickQuestion('Can we cook?')">🍳 Can we cook?</button>
+    <button type="button" class="ai-chip-btn" onclick="sendQuickQuestion('What time is check in and check out?')">🕒 Check-in time?</button>
+    <button type="button" class="ai-chip-btn" onclick="sendQuickQuestion('Magkano rate per night?')">💰 Magkano rate?</button>
+  </div>
+
+  <form id="aiChatForm" class="ai-chat-form" onsubmit="handleAiChatSubmit(event)">
+    <label for="aiChatInput" class="sr-only">Ask a question in English, Tagalog, or Taglish</label>
+    <input 
+      type="text" 
+      id="aiChatInput" 
+      class="ai-chat-input" 
+      placeholder="Ask in English, Tagalog, or Taglish..." 
+      autocomplete="off" 
+      required>
+    <button type="submit" id="aiChatSendBtn" class="ai-chat-send-btn" aria-label="Send message">
+      <span>Send</span>
+    </button>
+  </form>
+</div>
+
 <?!= include('Scripts'); ?>
 
 </body>
