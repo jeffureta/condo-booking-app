@@ -264,6 +264,15 @@
     return '₱' + Math.round(amount).toLocaleString('en-US');
   }
 
+  function formatCompactPhp(amount) {
+    var num = Math.round(amount);
+    if (num >= 1000) {
+      var k = Math.round((num / 1000) * 10) / 10;
+      return '₱' + k + 'k';
+    }
+    return '₱' + num;
+  }
+
   /* ==========================================================================
      APP LIFECYCLE & AVAILABILITY
      ========================================================================== */
@@ -426,6 +435,10 @@
         daySpan.textContent = dayNum;
         cell.appendChild(daySpan);
 
+        var subSpan = document.createElement('span');
+        subSpan.className = 'cal-cell-sub';
+        cell.appendChild(subSpan);
+
         if (!isCurrentMonth) {
           cell.classList.add('cal-other-month');
         }
@@ -445,6 +458,9 @@
         if (isOccupied) {
           cell.classList.add('cal-booked');
           cell.setAttribute('aria-disabled', 'true');
+          subSpan.textContent = 'Booked';
+        } else if (iso >= todayStr) {
+          subSpan.textContent = formatCompactPhp(priceInfo.unitRate);
         }
 
         applyCellSelectionClasses(cell, iso, inVal, outVal);
@@ -505,8 +521,13 @@
       return iso >= r.from && iso < r.to;
     });
 
+    cell.addEventListener('click', function(e) {
+      if (isPast || isOccupied) return;
+      handleCellClick(iso);
+    });
+
     cell.addEventListener('mousedown', function(e) {
-      e.preventDefault();
+      if (typeof e.button === 'number' && e.button !== 0) return;
       if (isPast || isOccupied) return;
 
       isDragging = true;
@@ -519,31 +540,6 @@
       if (!isDragging || !selectionAnchor) return;
       selectionHover = iso;
       highlightPreviewRange(selectionAnchor, selectionHover);
-    });
-
-    cell.addEventListener('touchstart', function(e) {
-      if (isPast || isOccupied) return;
-      isDragging = true;
-      selectionAnchor = iso;
-      selectionHover = iso;
-      highlightPreviewRange(selectionAnchor, selectionHover);
-    }, { passive: true });
-
-    cell.addEventListener('touchmove', function(e) {
-      if (!isDragging) return;
-      var touch = e.touches[0];
-      var target = document.elementFromPoint(touch.clientX, touch.clientY);
-      var cellTarget = target ? target.closest('.cal-cell') : null;
-      if (cellTarget && cellTarget.dataset.date) {
-        selectionHover = cellTarget.dataset.date;
-        highlightPreviewRange(selectionAnchor, selectionHover);
-      }
-    }, { passive: true });
-
-    cell.addEventListener('touchend', function() {
-      if (isDragging) {
-        finalizeSelection();
-      }
     });
 
     cell.addEventListener('keydown', function(e) {
@@ -988,96 +984,295 @@
   var KNOWLEDGE_BASE_LAYER = {
     pets: {
       id: 'pets',
-      keywords: ['dog', 'dogs', 'pet', 'pets', 'cat', 'cats', 'aso', 'pusa', 'alaga', 'hayop', 'pet-friendly', 'puppy'],
+      title: 'Pet Policy',
+      keywords: ['dog', 'dogs', 'pet', 'pets', 'cat', 'cats', 'aso', 'pusa', 'alaga', 'hayop', 'pet-friendly', 'puppy', 'kitten', 'tuta'],
       responses: {
-        en: 'Small, well-behaved pets (such as small dogs and cats) are welcome upon prior coordination! Please bring pet diapers/wee pads and a pet carrier when walking through Serin East common areas.',
-        tl: 'Welcome po ang maliliit at mababait na alagang hayop (tulad ng aso o pusa) basta ipagbigay-alam muna! Magdala lamang po ng pet diaper at carrier para sa common areas ng Serin East.',
-        taglish: 'Yes po, pet-friendly tayo for small dogs and cats upon prior coordination! Just bring pet diapers and a carrier kapag dadaan sa Serin East common areas.'
+        en: {
+          warm: 'Small, well-behaved pets (such as small dogs and cats) are welcome upon prior coordination! Please bring pet diapers/wee pads and a pet carrier when walking through Serin East common areas.',
+          polite: 'Yes, we are delighted to welcome small, well-behaved pets (small dogs and cats) upon prior coordination. We kindly request guests to bring pet diapers/wee pads and a pet carrier when passing through Serin East common areas.'
+        },
+        tl: {
+          warm: 'Welcome ang maliliit at mababait na alagang hayop (aso o pusa) basta ipagbigay-alam muna! Magdala lang ng pet diaper at carrier kapag dadaan sa common areas ng Serin East.',
+          polite: 'Opo, malugod po naming tinatanggap ang maliliit at mababait na alagang hayop (aso o pusa) basta ipagbigay-alam lamang po muna. Paki-dala lamang po ng pet diaper at carrier kapag dadaan sa Serin East common areas.'
+        },
+        taglish: {
+          warm: 'Yes, pet-friendly tayo for small dogs and cats upon prior coordination! Just bring pet diapers and a carrier kapag dadaan sa Serin East common areas.',
+          polite: 'Opo, pet-friendly po tayo for small dogs and cats upon prior coordination! Paki-bring na lang po ng pet diapers and carrier kapag dadaan sa Serin East common areas.'
+        }
       }
     },
     cooking: {
       id: 'cooking',
-      keywords: ['cook', 'cooking', 'kitchen', 'stove', 'microwave', 'lutuan', 'magluto', 'luto', 'pagkain', 'fridge', 'ref', 'utensils', 'kalan'],
+      title: 'Kitchen & Cooking',
+      keywords: ['cook', 'cooking', 'kitchen', 'stove', 'microwave', 'lutuan', 'magluto', 'luto', 'pagkain', 'fridge', 'ref', 'refrigerator', 'utensils', 'kalan', 'ulam', 'breakfast', 'magluluto', 'nagluto'],
       responses: {
-        en: 'Yes, light cooking is allowed! The kitchen features an induction stove, range hood, microwave, refrigerator, rice cooker, electric kettle, and cookware/utensils. Please avoid heavy or smelly frying (such as dried fish/tuyo).',
-        tl: 'Opo, maaaring magluto ng light cooking sa unit! Kumpleto po ito sa induction stove, microwave, refrigerator, rice cooker, electric kettle, at mga gamit sa pagluluto. Iwasan lamang po ang malalansang prito gaya ng tuyo o daing.',
-        taglish: 'Yes po, pwedeng mag-light cooking! Kompleto tayo with induction stove, microwave, ref, rice cooker, kettle, and basic cookware. Bawal lang po ang smelly frying like tuyo or daing.'
+        en: {
+          warm: 'Yes, light cooking is allowed! The kitchen features an induction stove, range hood, microwave, refrigerator, rice cooker, electric kettle, and cookware/utensils. Please avoid heavy or smelly frying (such as dried fish/tuyo).',
+          polite: 'Yes, light cooking is permitted in the unit. The kitchen is fully equipped with an induction stove, microwave, refrigerator, rice cooker, electric kettle, and cookware. We kindly ask to refrain from heavy or smelly frying (such as dried fish/tuyo).'
+        },
+        tl: {
+          warm: 'Oo, pwedeng magluto ng light cooking sa unit! Kumpleto sa induction stove, microwave, ref, rice cooker, electric kettle, at mga kagamitan. Iwasan lang ang malalansang prito gaya ng tuyo o daing.',
+          polite: 'Opo, maaari po kayong magluto ng light meals sa unit. Kumpleto po ito sa induction stove, microwave, refrigerator, rice cooker, kettle, at cookware. Paki-iwasan lamang po ang malalansang prito tulad ng tuyo o daing.'
+        },
+        taglish: {
+          warm: 'Yes, pwedeng mag-light cooking! Complete tayo with induction stove, microwave, ref, rice cooker, kettle, and cookware. Bawal lang po ang smelly frying like tuyo or daing.',
+          polite: 'Opo, allowed po mag-light cooking! Complete po ang kitchen with induction stove, microwave, ref, rice cooker, kettle, and cookware. Paki-avoid lang po ang smelly frying like tuyo or daing.'
+        }
       }
     },
     checkin_checkout: {
       id: 'checkin_checkout',
-      keywords: ['check-in', 'checkin', 'check-out', 'checkout', 'oras', 'time', 'dating', 'alis'],
+      title: 'Check-in & Check-out Times',
+      keywords: ['check-in', 'checkin', 'check-out', 'checkout', 'oras', 'time', 'dating', 'alis', 'chckin', 'chckout', 'arrival', 'departure'],
       responses: {
-        en: 'Standard check-in time is 3:00 PM and check-out is 11:00 AM to allow ample time for professional sanitization.',
-        tl: 'Ang standard check-in time ay 3:00 PM at ang check-out naman ay 11:00 AM para sa masusing paglilinis at sanitasyon ng unit.',
-        taglish: 'Check-in is at 3:00 PM and check-out is at 11:00 AM po para may ample time for thorough sanitization between guests.'
+        en: {
+          warm: 'Standard check-in time is 3:00 PM and check-out is 11:00 AM to allow ample time for professional sanitization.',
+          polite: 'Standard check-in time is 3:00 PM and check-out is 11:00 AM. This schedule ensures our caretaking team has ample time to thoroughly clean and sanitize the unit for your stay.'
+        },
+        tl: {
+          warm: 'Ang check-in time ay 3:00 PM at check-out naman ay 11:00 AM para may oras maglinis at mag-sanitize.',
+          polite: 'Ang amin pong standard check-in time ay 3:00 PM at ang check-out naman po ay 11:00 AM upang mabigyang-daan ang masusing paglilinis at sanitasyon ng unit bago ang inyong pagdating.'
+        },
+        taglish: {
+          warm: 'Check-in is at 3:00 PM and check-out is at 11:00 AM para may ample time for sanitization between guests.',
+          polite: 'Check-in is at 3:00 PM and check-out is at 11:00 AM po para masiguro ang thorough sanitization ng unit para sa inyong stay.'
+        }
       }
     },
     amenities_wifi: {
       id: 'amenities_wifi',
-      keywords: ['wifi', 'wi-fi', 'internet', 'pool', 'swimming', 'amenities', 'paliguan', 'towels', 'netflix', 'tv'],
+      title: 'Amenities & Wi-Fi',
+      keywords: ['wifi', 'wi-fi', 'internet', 'pool', 'swimming', 'amenities', 'paliguan', 'towels', 'netflix', 'tv', 'shower', 'heater'],
       responses: {
-        en: 'Unit 418 includes high-speed fiber Wi-Fi, Smart TV with Netflix, hot & cold shower, fresh linens, and access to the Serin East swimming pool & garden amenity areas.',
-        tl: 'Mayroong high-speed fiber Wi-Fi ang Unit 418, Smart TV na may Netflix, hot & cold shower, malinis na tuwalya, at access sa swimming pool at hardin ng Serin East.',
-        taglish: 'Unit 418 is equipped with high-speed fiber Wi-Fi, Smart TV with Netflix, hot shower, fresh towels, plus access sa Serin East swimming pool and garden amenities.'
+        en: {
+          warm: 'Unit 418 includes high-speed fiber Wi-Fi, Smart TV with Netflix, hot & cold shower, fresh linens, and access to the Serin East swimming pool & garden amenity areas.',
+          polite: 'Unit 418 offers high-speed fiber Wi-Fi, a Smart TV with Netflix, hot & cold shower, fresh linens, and access to the Serin East swimming pool and garden amenity grounds.'
+        },
+        tl: {
+          warm: 'May mabilis na fiber Wi-Fi ang Unit 418, Smart TV na may Netflix, hot & cold shower, malinis na tuwalya, at access sa swimming pool at garden ng Serin East.',
+          polite: 'Mayroon po tayong high-speed fiber Wi-Fi sa Unit 418, Smart TV na may Netflix, hot & cold shower, malinis na tuwalya, at access sa swimming pool at hardin ng Serin East.'
+        },
+        taglish: {
+          warm: 'Unit 418 is equipped with fast fiber Wi-Fi, Smart TV with Netflix, hot shower, fresh towels, plus access sa Serin East swimming pool and garden.',
+          polite: 'Equipped po ang Unit 418 with high-speed fiber Wi-Fi, Smart TV with Netflix, hot shower, and access sa Serin East swimming pool and garden amenities.'
+        }
       }
     },
     parking_location: {
       id: 'parking_location',
-      keywords: ['parking', 'park', 'sasakyan', 'location', 'address', 'saan', 'serin', 'ayala', 'simbahan', 'lourdes'],
+      title: 'Location & Parking',
+      keywords: ['parking', 'park', 'sasakyan', 'location', 'address', 'saan', 'serin', 'ayala', 'simbahan', 'lourdes', 'staycation', 'direksyon', 'mapa'],
       responses: {
-        en: 'We are conveniently located at Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, right beside Ayala Malls Serin and Lourdes Church! Pay parking is available on-site.',
-        tl: 'Matatagpuan po ang Unit 418 sa Serin East Tagaytay, Brgy. Silang Crossing East, katabi mismo ng Ayala Malls Serin at Lourdes Church! May available na on-site pay parking.',
-        taglish: 'Very convenient location right beside Ayala Malls Serin and Lourdes Church sa Brgy. Silang Crossing East, Tagaytay City! May pay parking po sa building.'
+        en: {
+          warm: 'We are located at Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, right beside Ayala Malls Serin and Lourdes Church! Pay parking is available on-site.',
+          polite: 'We are conveniently located at Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, right beside Ayala Malls Serin and Lourdes Church. Pay parking is conveniently available on-site.'
+        },
+        tl: {
+          warm: 'Nasa Unit 418 Serin East Tagaytay kami, Brgy. Silang Crossing East, katabi ng Ayala Malls Serin at Lourdes Church! May available na on-site pay parking.',
+          polite: 'Matatagpuan po ang Unit 418 sa Serin East Tagaytay, Brgy. Silang Crossing East, katabi mismo ng Ayala Malls Serin at Lourdes Church. Mayroon po itong convenient on-site pay parking para sa inyong sasakyan.'
+        },
+        taglish: {
+          warm: 'Very accessible location right beside Ayala Malls Serin and Lourdes Church sa Brgy. Silang Crossing East, Tagaytay City! May pay parking po sa building.',
+          polite: 'Very accessible po ang location right beside Ayala Malls Serin and Lourdes Church sa Tagaytay City. May available on-site pay parking din po.'
+        }
       }
     },
     pricing_discounts: {
       id: 'pricing_discounts',
-      keywords: ['rate', 'rates', 'price', 'pricing', 'magkano', 'how much', 'cost', 'discount', 'mura', 'bawas'],
+      title: 'Pricing & Discounts',
+      keywords: ['rate', 'rates', 'price', 'pricing', 'magkano', 'how much', 'cost', 'discount', 'mura', 'bawas', 'presyo', 'singil', 'promo'],
       responses: {
-        en: 'Our dynamic rates guarantee a ₱500/night undercut compared to the 10km Tagaytay 2BR market average! Plus enjoy 5% off for 3+ nights and 10% off for 7+ nights.',
-        tl: 'Garantisadong mas mababa ng ₱500 bawat gabi ang presyo natin kumpara sa 10km Tagaytay 2BR market average! Dagdag pa ang 5% discount para sa 3+ nights at 10% discount para sa 7+ nights.',
-        taglish: 'Guaranteed ₱500/night savings tayo compared sa 10km Tagaytay 2BR market average! May extra 5% off for 3+ nights and 10% off for 7+ nights weekly staycation.'
+        en: {
+          warm: 'Our dynamic rates guarantee a ₱500/night undercut compared to the 10km Tagaytay 2BR market average! Plus enjoy 5% off for 3+ nights and 10% off for 7+ nights.',
+          polite: 'Our dynamic rates guarantee a ₱500/night undercut compared to the 10km Tagaytay 2BR market average. In addition, we are pleased to offer a 5% discount for stays of 3+ nights and 10% discount for 7+ nights.'
+        },
+        tl: {
+          warm: 'Garantisadong mas mababa ng ₱500 bawat gabi ang presyo natin kumpara sa 10km Tagaytay 2BR market average! May 5% discount sa 3+ nights at 10% discount sa 7+ nights.',
+          polite: 'Garantisado po na mas mababa ng ₱500 bawat gabi ang aming presyo kumpara sa 10km Tagaytay market average. Mayroon din po tayong 5% discount para sa 3+ nights at 10% discount para sa 7+ nights.'
+        },
+        taglish: {
+          warm: 'Guaranteed ₱500/night savings tayo compared sa 10km Tagaytay 2BR market average! May extra 5% off for 3+ nights and 10% off for 7+ nights.',
+          polite: 'Guaranteed ₱500/night savings po tayo compared sa 10km Tagaytay market average! Mayroon din pong extra 5% discount for 3+ nights and 10% discount for 7+ nights.'
+        }
       }
     }
   };
 
-  function detectMessageLanguage(text) {
-    if (!text) return 'en';
-    var clean = text.toLowerCase();
+  var NEUTRAL_LOANWORDS = [
+    'check-in', 'checkin', 'check-out', 'checkout', 'wifi', 'wi-fi',
+    'condo', 'unit', 'pool', 'tv', 'netflix', 'parking', 'park',
+    'microwave', 'induction', 'staycation', 'tagaytay', 'serin', 'ayala'
+  ];
 
-    var tagalogMarkers = [
-      'po', 'opo', 'ba', 'naman', 'kasi', 'dito', 'doon', 'namin', 'natin', 'inyo',
-      'kami', 'tayo', 'sila', 'ito', 'iyan', 'iyon', 'magkano', 'saan', 'kailan',
-      'paano', 'bakit', 'pwede', 'puwede', 'maaari', 'alaga', 'hayop', 'luto', 'lutuan',
-      'aso', 'pusa', 'oras', 'dating', 'alis', 'bayad', 'bawat', 'gabi', 'matatagpuan',
-      'walang', 'mayroon', 'meron', 'salamat'
-    ];
+  var TAGALOG_MARKERS = [
+    'po', 'opo', 'ho', 'ba', 'naman', 'kasi', 'dito', 'doon', 'namin', 'natin', 'inyo',
+    'kami', 'tayo', 'sila', 'ito', 'iyan', 'iyon', 'magkano', 'saan', 'kailan',
+    'paano', 'bakit', 'pwede', 'puwede', 'maaari', 'alaga', 'hayop', 'luto', 'lutuan',
+    'aso', 'pusa', 'oras', 'dating', 'alis', 'bayad', 'bawat', 'gabi', 'matatagpuan',
+    'walang', 'mayroon', 'meron', 'salamat', 'din', 'rin', 'kayo', 'paki'
+  ];
 
-    var englishMarkers = [
-      'the', 'is', 'are', 'can', 'we', 'you', 'what', 'where', 'when', 'how', 'much',
-      'allowed', 'allow', 'available', 'availability', 'booking', 'reservation', 'guest',
-      'guests', 'stay', 'night', 'nights', 'price', 'cost', 'check',
-      'in', 'out', 'room', 'rules', 'policy', 'thanks', 'thank'
-    ];
+  var ENGLISH_MARKERS = [
+    'the', 'is', 'are', 'can', 'we', 'you', 'what', 'where', 'when', 'how', 'much',
+    'allowed', 'allow', 'available', 'availability', 'booking', 'reservation', 'guest',
+    'guests', 'stay', 'night', 'nights', 'price', 'cost', 'room', 'rules', 'policy',
+    'thanks', 'thank', 'could', 'would', 'please', 'kindly', 'separate', 'bring'
+  ];
 
-    var tlScore = 0;
-    var enScore = 0;
+  var POLITE_MARKERS = [
+    'po', 'opo', 'ho', 'maaari', 'paumanhin', 'paki', 'salamat po', 'ninyo',
+    'please', 'kindly', 'could you', 'would you', 'may i', 'sir', 'maam'
+  ];
 
-    var words = clean.split(/[^a-zA-Z0-9_-]+/).filter(Boolean);
-    for (var i = 0; i < words.length; i++) {
-      var w = words[i];
-      if (tagalogMarkers.indexOf(w) !== -1) tlScore++;
-      if (englishMarkers.indexOf(w) !== -1) enScore++;
+  function analyzeLanguageStatistics(text) {
+    if (!text) {
+      return {
+        language: 'en',
+        probabilities: { en: 0.8, tl: 0.1, taglish: 0.1 },
+        codeMixingIndex: 0,
+        politenessScore: 0,
+        register: 'warm'
+      };
     }
 
-    var isTaglish = (tlScore >= 1 && enScore >= 1) ||
-      /\b(allowed\s+ba|pwede\s+ba\s+mag|mag-cook|mag-book|i-book|nag-book)\b/i.test(clean);
+    var clean = text.toLowerCase().trim();
+    var tokens = clean.split(/[^a-zA-Z0-9_\u00C0-\u024F-]+/).filter(Boolean);
 
-    if (isTaglish) return 'taglish';
-    if (tlScore > 0 && enScore === 0) return 'tl';
-    if (tlScore > enScore) return 'tl';
-    return 'en';
+    var tlTokens = 0;
+    var enTokens = 0;
+    var politeHits = 0;
+
+    var morphCodeSwitch = /\b(mag-[a-z]+|nag-[a-z]+|i-[a-z]+|allowed\s+ba|pwede\s+ba\s+mag|pwede\s+mag)\b/i.test(clean);
+
+    for (var i = 0; i < tokens.length; i++) {
+      var tok = tokens[i];
+      if (NEUTRAL_LOANWORDS.indexOf(tok) !== -1) continue;
+
+      if (TAGALOG_MARKERS.indexOf(tok) !== -1) {
+        tlTokens++;
+      } else if (ENGLISH_MARKERS.indexOf(tok) !== -1) {
+        enTokens++;
+      } else if (tok.indexOf('mag') === 0 || tok.indexOf('nag') === 0) {
+        tlTokens += 0.8;
+      }
+    }
+
+    for (var p = 0; p < POLITE_MARKERS.length; p++) {
+      if (clean.indexOf(POLITE_MARKERS[p]) !== -1) {
+        politeHits++;
+      }
+    }
+
+    var politenessScore = tokens.length > 0 ? (politeHits / Math.min(tokens.length, 6)) : 0;
+    var register = politenessScore >= 0.15 ? 'polite' : 'warm';
+
+    var totalAnalyzed = tlTokens + enTokens;
+    var cmi = 0;
+    if (totalAnalyzed > 0) {
+      var maxLang = Math.max(tlTokens, enTokens);
+      cmi = 1 - (maxLang / totalAnalyzed);
+    }
+
+    var language = 'en';
+    var isTaglish = morphCodeSwitch || (cmi >= 0.22 && tlTokens >= 0.8 && enTokens >= 0.8);
+
+    if (isTaglish) {
+      language = 'taglish';
+    } else if (tlTokens > enTokens || (tlTokens >= 1 && enTokens === 0)) {
+      language = 'tl';
+    } else {
+      language = 'en';
+    }
+
+    return {
+      language: language,
+      probabilities: {
+        en: language === 'en' ? 0.8 : (language === 'taglish' ? 0.15 : 0.1),
+        tl: language === 'tl' ? 0.75 : (language === 'taglish' ? 0.15 : 0.1),
+        taglish: language === 'taglish' ? 0.7 : 0.15
+      },
+      codeMixingIndex: Math.round(cmi * 1000) / 1000,
+      politenessScore: Math.round(politenessScore * 1000) / 1000,
+      register: register
+    };
+  }
+
+  function detectMessageLanguage(text) {
+    return analyzeLanguageStatistics(text).language;
+  }
+
+  function getTrigrams(str) {
+    var trigrams = [];
+    var padded = '  ' + str + ' ';
+    for (var i = 0; i < padded.length - 2; i++) {
+      var tri = padded.slice(i, i + 3);
+      if (trigrams.indexOf(tri) === -1) trigrams.push(tri);
+    }
+    return trigrams;
+  }
+
+  function trigramDiceSimilarity(str1, str2) {
+    if (str1 === str2) return 1.0;
+    if (!str1 || !str2) return 0;
+    var tri1 = getTrigrams(str1);
+    var tri2 = getTrigrams(str2);
+    var intersection = 0;
+    for (var i = 0; i < tri1.length; i++) {
+      if (tri2.indexOf(tri1[i]) !== -1) intersection++;
+    }
+    return (2 * intersection) / (tri1.length + tri2.length);
+  }
+
+  function scoreKnowledgeBaseIntents(text) {
+    if (!text) return { ranked: [], confidence: 0 };
+    var clean = text.toLowerCase().trim();
+    var tokens = clean.split(/[^a-zA-Z0-9_\u00C0-\u024F]+/).filter(function(t) { return t.length > 1; });
+
+    var topicScores = [];
+    var keys = Object.keys(KNOWLEDGE_BASE_LAYER);
+
+    for (var i = 0; i < keys.length; i++) {
+      var item = KNOWLEDGE_BASE_LAYER[keys[i]];
+      var score = 0;
+      var matchedKeywords = [];
+
+      for (var t = 0; t < tokens.length; t++) {
+        var token = tokens[t];
+        for (var k = 0; k < item.keywords.length; k++) {
+          var kw = item.keywords[k];
+          if (token === kw) {
+            score += 3.0;
+            matchedKeywords.push(kw);
+            break;
+          } else if (token.length >= 4 && kw.length >= 4) {
+            var sim = trigramDiceSimilarity(token, kw);
+            if (sim >= 0.72) {
+              score += 2.0 * sim;
+              matchedKeywords.push(kw);
+              break;
+            }
+          }
+        }
+      }
+
+      if (score > 0) {
+        topicScores.push({
+          id: item.id,
+          title: item.title,
+          score: score,
+          matchedKeywords: matchedKeywords
+        });
+      }
+    }
+
+    topicScores.sort(function(a, b) { return b.score - a.score; });
+    var topScore = topicScores.length > 0 ? topicScores[0].score : 0;
+    var confidence = topScore >= 3.0 ? Math.min(1.0, topScore / 6.0) : (topScore > 0 ? 0.3 : 0);
+
+    return {
+      ranked: topicScores,
+      confidence: Math.round(confidence * 1000) / 1000
+    };
   }
 
   function extractBookingEntities(text) {
@@ -1108,9 +1303,17 @@
   }
 
   function resolveGuestAgentReply(userMessage) {
-    var language = detectMessageLanguage(userMessage);
-    var clean = (userMessage || '').toLowerCase();
+    var stats = analyzeLanguageStatistics(userMessage);
+    var language = stats.language;
+    var register = stats.register;
     var entities = extractBookingEntities(userMessage);
+    var intentAnalysis = scoreKnowledgeBaseIntents(userMessage);
+    var rankedIntents = intentAnalysis.ranked;
+
+    var topics = [];
+    var textSections = [];
+    var hasQuote = false;
+    var bookingAction = null;
 
     if (entities.startDate && entities.endDate) {
       var isConflict = currentBookedRanges.some(function(r) {
@@ -1118,78 +1321,102 @@
       });
 
       if (isConflict) {
+        topics.push('availability_conflict');
         var conflictMsgs = {
           en: 'Sorry, the dates from ' + entities.startDate + ' to ' + entities.endDate + ' are not available due to an existing booking. Please pick another date range on the calendar!',
           tl: 'Paumanhin po, may nakareserba na sa petsang ' + entities.startDate + ' hanggang ' + entities.endDate + '. Maaari po kayong pumili ng ibang available na araw sa kalendaryo!',
           taglish: 'Sorry po, occupied na ang ' + entities.startDate + ' to ' + entities.endDate + ' on our calendar. Please select other dates po!'
         };
-        return {
-          topic: 'availability_conflict',
-          language: language,
-          text: conflictMsgs[language] || conflictMsgs.en,
-          hasQuote: false,
-          bookingAction: null
-        };
-      }
+        textSections.push(conflictMsgs[language] || conflictMsgs.en);
+      } else {
+        var guestCount = entities.guestCount || 2;
+        var quote = calculateStayQuote(entities.startDate, entities.endDate, guestCount);
 
-      var guestCount = entities.guestCount || 2;
-      var quote = calculateStayQuote(entities.startDate, entities.endDate, guestCount);
-
-      if (quote) {
-        var availMsgs = {
-          en: 'Great news! Unit 418 is available from ' + entities.startDate + ' to ' + entities.endDate + ' (' + quote.nights + ' nights) for ' + guestCount + ' guest(s). Confirmed total is ' + formatPhp(quote.totalPrice) + ' (saving ' + formatPhp(quote.totalSavings) + ' vs market).',
-          tl: 'Magandang balita! Available ang Unit 418 mula ' + entities.startDate + ' hanggang ' + entities.endDate + ' (' + quote.nights + ' gabi) para sa ' + guestCount + ' bisita. Ang kabuuang bayad ay ' + formatPhp(quote.totalPrice) + ' (nakatipid ng ' + formatPhp(quote.totalSavings) + ').',
-          taglish: 'Available po ang Unit 418 from ' + entities.startDate + ' to ' + entities.endDate + ' (' + quote.nights + ' nights) for ' + guestCount + ' guests! Total is ' + formatPhp(quote.totalPrice) + ' with ' + formatPhp(quote.totalSavings) + ' total savings vs 10km market.'
-        };
-
-        return {
-          topic: 'booking_quote',
-          language: language,
-          text: availMsgs[language] || availMsgs.en,
-          hasQuote: true,
-          bookingAction: {
+        if (quote) {
+          topics.push('booking_quote');
+          hasQuote = true;
+          bookingAction = {
             startDate: entities.startDate,
             endDate: entities.endDate,
             guestCount: guestCount,
-            totalPrice: quote.totalPrice
-          }
-        };
-      }
-    }
+            totalPrice: quote.totalPrice,
+            quote: quote
+          };
 
-    var keys = Object.keys(KNOWLEDGE_BASE_LAYER);
-    for (var i = 0; i < keys.length; i++) {
-      var item = KNOWLEDGE_BASE_LAYER[keys[i]];
-      var matched = false;
-      for (var k = 0; k < item.keywords.length; k++) {
-        if (clean.indexOf(item.keywords[k]) !== -1) {
-          matched = true;
-          break;
+          var savings = quote.totalSavingsVsMarket || quote.totalSavings || 0;
+          var availMsgs = {
+            en: 'Great news! Unit 418 is available from ' + entities.startDate + ' to ' + entities.endDate + ' (' + quote.nights + ' nights) for ' + guestCount + ' guest(s). Confirmed total is ' + formatPhp(quote.totalPrice) + ' (saving ' + formatPhp(savings) + ' vs market).',
+            tl: 'Magandang balita! Available ang Unit 418 mula ' + entities.startDate + ' hanggang ' + entities.endDate + ' (' + quote.nights + ' gabi) para sa ' + guestCount + ' bisita. Ang kabuuang bayad ay ' + formatPhp(quote.totalPrice) + ' (nakatipid ng ' + formatPhp(savings) + ').',
+            taglish: 'Available po ang Unit 418 from ' + entities.startDate + ' to ' + entities.endDate + ' (' + quote.nights + ' nights) for ' + guestCount + ' guests! Total is ' + formatPhp(quote.totalPrice) + ' with ' + formatPhp(savings) + ' total savings vs 10km market.'
+          };
+          textSections.push(availMsgs[language] || availMsgs.en);
         }
       }
-      if (matched) {
-        return {
-          topic: item.id,
-          language: language,
-          text: item.responses[language] || item.responses.en,
-          hasQuote: false,
-          bookingAction: null
-        };
+    }
+
+    var maxFaqIntents = 2;
+    var selectedFaqItems = [];
+    for (var f = 0; f < rankedIntents.length; f++) {
+      if (selectedFaqItems.length >= maxFaqIntents) break;
+      var kbItem = KNOWLEDGE_BASE_LAYER[rankedIntents[f].id];
+      if (kbItem) {
+        selectedFaqItems.push(kbItem);
+        topics.push(rankedIntents[f].id);
       }
     }
 
-    var defaultReplies = {
-      en: 'Hello! I am your Unit 418 Serin East Tagaytay AI concierge. You can ask me about house rules (e.g. "are dogs allowed?", "can we cook?"), amenities, check-in times, or check date availability!',
-      tl: 'Kumusta po! Ako ang inyong Unit 418 Serin East Tagaytay AI concierge. Maaari ninyong itanong ang tungkol sa house rules (hal. "pwede ba ang aso?", "maaari bang magluto?"), amenities, o mag-check ng bakanteng petsa!',
-      taglish: 'Hi po! I am your Unit 418 Serin East Tagaytay AI concierge. Feel free to ask about house rules ("allowed ba dogs?", "pwede ba mag-cook?"), amenities, or check available dates!'
-    };
+    if (selectedFaqItems.length > 0) {
+      var connectors = {
+        en: ' Additionally, ',
+        tl: ' Bukod pa rito, ',
+        taglish: ' Also po, '
+      };
+
+      var faqTexts = [];
+      for (var s = 0; s < selectedFaqItems.length; s++) {
+        var it = selectedFaqItems[s];
+        var langResponses = it.responses[language] || it.responses.en;
+        if (typeof langResponses === 'object') {
+          faqTexts.push(langResponses[register] || langResponses.warm || Object.values(langResponses)[0]);
+        } else {
+          faqTexts.push(langResponses);
+        }
+      }
+
+      var conn = connectors[language] || connectors.en;
+      if (textSections.length > 0) {
+        textSections.push(conn + faqTexts.join(conn));
+      } else {
+        textSections.push(faqTexts.join(conn));
+      }
+    }
+
+    if (textSections.length === 0) {
+      topics.push('general_help');
+      var defaultReplies = {
+        en: 'Hello! I am your Unit 418 Serin East Tagaytay AI concierge. You can ask me about house rules (e.g. "are dogs allowed?", "can we cook?"), amenities, check-in times, or check date availability!',
+        tl: 'Kumusta po! Ako ang inyong Unit 418 Serin East Tagaytay AI concierge. Maaari ninyong itanong ang tungkol sa house rules (hal. "pwede ba ang aso?", "maaari bang magluto?"), amenities, o mag-check ng bakanteng petsa!',
+        taglish: 'Hi po! I am your Unit 418 Serin East Tagaytay AI concierge. Feel free to ask about house rules ("allowed ba dogs?", "pwede ba mag-cook?"), amenities, or check available dates!'
+      };
+      textSections.push(defaultReplies[language] || defaultReplies.en);
+    }
 
     return {
-      topic: 'general_help',
+      topic: topics[0] || 'general_help',
+      topics: topics,
       language: language,
-      text: defaultReplies[language] || defaultReplies.en,
-      hasQuote: false,
-      bookingAction: null
+      text: textSections.join(' ').trim(),
+      hasQuote: hasQuote,
+      bookingAction: bookingAction,
+      stats: {
+        language: stats.language,
+        probabilities: stats.probabilities,
+        codeMixingIndex: stats.codeMixingIndex,
+        politenessScore: stats.politenessScore,
+        register: stats.register,
+        confidence: intentAnalysis.confidence,
+        intentScores: rankedIntents
+      }
     };
   }
 
@@ -1206,9 +1433,21 @@
       launcher.setAttribute('aria-expanded', nextState ? 'true' : 'false');
     }
 
+    var isMobileViewport = typeof window !== 'undefined' && window.innerWidth && window.innerWidth <= 480;
+
     if (nextState) {
+      if (isMobileViewport && document.body && document.body.style) {
+        document.body.style.overflow = 'hidden';
+      }
       var input = document.getElementById('aiChatInput');
-      if (input) input.focus();
+      // Do not auto-focus on mobile to keep quick-chips visible without virtual keyboard pop-up
+      if (input && !isMobileViewport) {
+        input.focus();
+      }
+    } else {
+      if (document.body && document.body.style) {
+        document.body.style.overflow = '';
+      }
     }
   }
 

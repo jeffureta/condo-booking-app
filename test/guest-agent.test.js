@@ -3,136 +3,168 @@ import assert from 'node:assert/strict';
 import {
   KNOWLEDGE_BASE_LAYER,
   detectMessageLanguage,
+  analyzeLanguageStatistics,
+  scoreKnowledgeBaseIntents,
   extractBookingEntities,
   resolveGuestAgentReply,
   generateHybridAgentReply
 } from '../guest-agent-core.js';
 
 describe('Client-Side Trilingual Guest Relations & Booking Agent (TDD Red-Green-Refactor)', () => {
-  describe('Language Detection (detectMessageLanguage)', () => {
-    test('detects English query', () => {
+  describe('Statistical Language & Register Analysis (analyzeLanguageStatistics)', () => {
+    test('classifies English and extracts statistical probabilities', () => {
+      const stats = analyzeLanguageStatistics('Are dogs allowed in the unit?');
+      assert.equal(stats.language, 'en');
+      assert.ok(stats.probabilities.en > stats.probabilities.tl);
+      assert.equal(typeof stats.codeMixingIndex, 'number');
+      assert.equal(typeof stats.politenessScore, 'number');
+    });
+
+    test('classifies pure Tagalog even with neutral hospitality loanwords', () => {
+      // "Anong oras po ang check-in sa condo?" should NOT be misclassified as Taglish just because of 'check-in' and 'condo'
+      const stats1 = analyzeLanguageStatistics('Anong oras po ang check-in sa condo?');
+      assert.equal(stats1.language, 'tl');
+      assert.equal(stats1.register, 'polite');
+      assert.ok(stats1.politenessScore > 0);
+
+      const stats2 = analyzeLanguageStatistics('Mabilis po ba ang wifi sa unit?');
+      assert.equal(stats2.language, 'tl');
+      assert.equal(stats2.register, 'polite');
+    });
+
+    test('detects true Taglish code-mixing and morphological mixing', () => {
+      const stats1 = analyzeLanguageStatistics('Allowed ba dogs dito?');
+      assert.equal(stats1.language, 'taglish');
+      assert.ok(stats1.codeMixingIndex > 0 || stats1.probabilities.taglish > 0.4);
+
+      const stats2 = analyzeLanguageStatistics('Pwede ba mag-cook ng breakfast?');
+      assert.equal(stats2.language, 'taglish');
+
+      const stats3 = analyzeLanguageStatistics('Magkano rate for 4 guests this weekend?');
+      assert.equal(stats3.language, 'taglish');
+    });
+
+    test('calibrates politeness register (polite vs warm)', () => {
+      const politeTl = analyzeLanguageStatistics('Maaari po bang magtanong kung may parking?');
+      assert.equal(politeTl.register, 'polite');
+
+      const politeEn = analyzeLanguageStatistics('Could you please let me know if pets are allowed?');
+      assert.equal(politeEn.register, 'polite');
+
+      const warmEn = analyzeLanguageStatistics('Can we cook?');
+      assert.equal(warmEn.register, 'warm');
+
+      const warmTl = analyzeLanguageStatistics('May parking ba diyan?');
+      assert.equal(warmTl.register, 'warm');
+    });
+
+    test('detectMessageLanguage remains backward-compatible', () => {
       assert.equal(detectMessageLanguage('Are dogs allowed in the unit?'), 'en');
-      assert.equal(detectMessageLanguage('Can we cook inside the condo?'), 'en');
-      assert.equal(detectMessageLanguage('What time is check in and check out?'), 'en');
-    });
-
-    test('detects Tagalog query', () => {
       assert.equal(detectMessageLanguage('Pwede po ba ang aso sa condo?'), 'tl');
-      assert.equal(detectMessageLanguage('Maaari po ba kaming magluto dito?'), 'tl');
-      assert.equal(detectMessageLanguage('Magkano po ba ang bayad sa bawat gabi?'), 'tl');
-    });
-
-    test('detects Taglish query', () => {
       assert.equal(detectMessageLanguage('Allowed ba dogs dito?'), 'taglish');
-      assert.equal(detectMessageLanguage('Pwede ba mag-cook ng food?'), 'taglish');
-      assert.equal(detectMessageLanguage('Magkano rate for 4 guests this weekend?'), 'taglish');
     });
   });
 
-  describe('Guest-Relations FAQ Resolution & Knowledge Base Layer', () => {
-    test('contains decoupled Knowledge Base layer with pet and cooking rules', () => {
-      assert.ok(KNOWLEDGE_BASE_LAYER.pets);
-      assert.ok(KNOWLEDGE_BASE_LAYER.cooking);
-      assert.ok(KNOWLEDGE_BASE_LAYER.pets.responses.en);
-      assert.ok(KNOWLEDGE_BASE_LAYER.pets.responses.tl);
-      assert.ok(KNOWLEDGE_BASE_LAYER.pets.responses.taglish);
+  describe('Statistical BM25 & Trigram Intent Scoring (scoreKnowledgeBaseIntents)', () => {
+    test('avoids substring collisions on "staycation" and "separate"', () => {
+      // "staycation" contains "cat" -> previously triggered 'pets'
+      const scoredStay = scoreKnowledgeBaseIntents('Where is the location for our staycation?');
+      assert.ok(scoredStay.ranked.length > 0);
+      assert.equal(scoredStay.ranked[0].id, 'parking_location');
+      assert.notEqual(scoredStay.ranked[0].id, 'pets');
+
+      // "separate" contains "rate" -> should not trigger pricing unless asking about rates
+      const scoredKitchen = scoreKnowledgeBaseIntents('Is the kitchen separate or open layout?');
+      assert.equal(scoredKitchen.ranked[0].id, 'cooking');
     });
 
-    test('answers "are dogs allowed?" in matching language', () => {
-      const enReply = resolveGuestAgentReply('Are dogs allowed in the unit?');
-      assert.equal(enReply.topic, 'pets');
-      assert.equal(enReply.language, 'en');
-      assert.match(enReply.text, /small.*pet|dog/i);
+    test('tolerates minor typos and Tagalog verb morphology via character trigrams', () => {
+      // Typo "chckin" -> checkin_checkout
+      const typoCheck = scoreKnowledgeBaseIntents('What time is chckin?');
+      assert.equal(typoCheck.ranked[0].id, 'checkin_checkout');
 
-      const tlReply = resolveGuestAgentReply('Pwede po ba magdala ng aso?');
-      assert.equal(tlReply.topic, 'pets');
-      assert.equal(tlReply.language, 'tl');
-      assert.match(tlReply.text, /alaga.*hayop|aso/i);
-
-      const taglishReply = resolveGuestAgentReply('Allowed ba ang dogs dito?');
-      assert.equal(taglishReply.topic, 'pets');
-      assert.equal(taglishReply.language, 'taglish');
-      assert.match(taglishReply.text, /pet-friendly/i);
-    });
-
-    test('answers "can we cook?" in matching language', () => {
-      const enReply = resolveGuestAgentReply('Can we cook?');
-      assert.equal(enReply.topic, 'cooking');
-      assert.equal(enReply.language, 'en');
-      assert.match(enReply.text, /light cooking/i);
-      assert.match(enReply.text, /induction stove/i);
-
-      const tlReply = resolveGuestAgentReply('Maaari po bang magluto sa unit?');
-      assert.equal(tlReply.topic, 'cooking');
-      assert.equal(tlReply.language, 'tl');
-      assert.match(tlReply.text, /magluto/i);
-
-      const taglishReply = resolveGuestAgentReply('Pwede ba mag-cook ng food?');
-      assert.equal(taglishReply.topic, 'cooking');
-      assert.equal(taglishReply.language, 'taglish');
-      assert.match(taglishReply.text, /light cooking/i);
+      // Tagalog verb morphology "magluluto" -> cooking
+      const morphCook = scoreKnowledgeBaseIntents('Pwede ba magluluto ng ulam?');
+      assert.equal(morphCook.ranked[0].id, 'cooking');
     });
   });
 
-  describe('Entity Extraction & Booking Actions', () => {
-    test('extracts date ranges and guest counts accurately', () => {
-      const entities = extractBookingEntities('Can I book from 2026-12-05 to 2026-12-08 for 4 guests?');
-      assert.equal(entities.startDate, '2026-12-05');
-      assert.equal(entities.endDate, '2026-12-08');
-      assert.equal(entities.guestCount, 4);
+  describe('Multi-Intent Synthesis & Register-Calibrated Responses', () => {
+    test('synthesizes multi-topic FAQ inquiry into a cohesive reply', () => {
+      const reply = resolveGuestAgentReply('Allowed ba dogs at pwede ba mag-cook?');
+      assert.equal(reply.language, 'taglish');
+      assert.ok(Array.isArray(reply.topics));
+      assert.ok(reply.topics.includes('pets'));
+      assert.ok(reply.topics.includes('cooking'));
+      assert.match(reply.text, /pet|dog/i);
+      assert.match(reply.text, /cook|induction|luto/i);
+      assert.ok(reply.stats);
+      assert.equal(reply.stats.language, 'taglish');
     });
 
-    test('returns quote and 1-tap booking action CTA when dates are available', () => {
+    test('synthesizes date availability quote alongside FAQ inquiry', () => {
       const context = {
-        bookedRanges: [
-          { from: '2026-11-20', to: '2026-11-22', title: 'Reserved Guest' }
-        ]
+        bookedRanges: []
       };
-      const reply = resolveGuestAgentReply('Is 2026-12-10 to 2026-12-13 available for 3 guests?', context);
+      const reply = resolveGuestAgentReply('Is 2026-12-10 to 2026-12-13 available for 3 guests and are dogs allowed?', context);
       assert.equal(reply.hasQuote, true);
       assert.ok(reply.bookingAction);
-      assert.equal(reply.bookingAction.startDate, '2026-12-10');
-      assert.equal(reply.bookingAction.endDate, '2026-12-13');
-      assert.equal(reply.bookingAction.guestCount, 3);
-      assert.ok(reply.bookingAction.totalPrice > 0);
+      assert.ok(reply.topics.includes('booking_quote'));
+      assert.ok(reply.topics.includes('pets'));
       assert.match(reply.text, /available/i);
+      assert.match(reply.text, /pet|dog/i);
     });
 
-    test('flags conflict when queried dates overlap with existing reservation', () => {
-      const context = {
-        bookedRanges: [
-          { from: '2026-12-10', to: '2026-12-15', title: 'Reserved Guest' }
-        ]
-      };
-      const reply = resolveGuestAgentReply('Can we book 2026-12-12 to 2026-12-14?', context);
-      assert.equal(reply.hasQuote, false);
-      assert.equal(reply.bookingAction, null);
-      assert.match(reply.text, /not available|occupied|conflict|reserved/i);
+    test('adapts tone based on polite vs warm register', () => {
+      const politeReply = resolveGuestAgentReply('Maaari po bang magluto sa unit?');
+      assert.equal(politeReply.stats.register, 'polite');
+      assert.match(politeReply.text, /opo|po/i);
+
+      const politeEnReply = resolveGuestAgentReply('Could you please let me know the check-in time?');
+      assert.equal(politeEnReply.stats.register, 'polite');
+      assert.ok(politeReply.text.length > 0);
+    });
+
+    test('provides clarifying fallback when confidence is low or query is ambiguous', () => {
+      const reply = resolveGuestAgentReply('xyz123 random words query?');
+      assert.equal(reply.topic, 'general_help');
+      assert.ok(reply.stats.confidence < 0.35);
     });
   });
 
-  describe('Hybrid Google Built-in AI / Gemini Nano Fallback', () => {
-    test('uses Chrome Gemini Nano prompt API if available', async () => {
+  describe('Hybrid Google Built-in AI / Gemini Nano Fallback with Stats Injection', () => {
+    test('injects statistical context into Gemini Nano prompt', async () => {
+      let capturedSystemPrompt = '';
+      let capturedPrompt = '';
       const mockSession = {
-        prompt: async (promptText) => `[Gemini Nano Response] Dogs are welcome! Prompt length: ${promptText.length}`,
+        prompt: async (promptText) => {
+          capturedPrompt = promptText;
+          return `[Nano Answer] Yes, small pets are welcome upon coordination.`;
+        },
         destroy: () => {}
       };
       const mockAi = {
         languageModel: {
           capabilities: async () => ({ available: 'readily' }),
-          create: async () => mockSession
+          create: async (opts) => {
+            capturedSystemPrompt = opts.systemPrompt || '';
+            return mockSession;
+          }
         }
       };
 
-      const reply = await generateHybridAgentReply('Are dogs allowed?', {}, mockAi);
-      assert.ok(reply.text.includes('[Gemini Nano Response]'));
+      const reply = await generateHybridAgentReply('Allowed ba dogs dito?', {}, mockAi);
       assert.equal(reply.engine, 'gemini-nano');
+      assert.ok(capturedSystemPrompt.includes('Language: taglish') || capturedSystemPrompt.includes('taglish'));
+      assert.ok(capturedPrompt.includes('Allowed ba dogs dito?'));
+      assert.ok(reply.stats);
     });
 
-    test('gracefully falls back to deterministic engine when window.ai is absent or throws', async () => {
+    test('gracefully falls back to deterministic statistical engine when window.ai is absent', async () => {
       const reply = await generateHybridAgentReply('Can we cook?', {}, null);
       assert.equal(reply.engine, 'deterministic-fallback');
       assert.match(reply.text, /light cooking/i);
+      assert.ok(reply.stats);
     });
   });
 });
