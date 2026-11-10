@@ -150,6 +150,16 @@ describe('Google Apps Script HtmlService Preprocessor & Dynamic Pricing Verifica
     createElement('confText', 'p');
     createElement('addToGoogleCalBtn', 'a');
 
+    // AI Concierge Chat Drawer & Launcher Elements
+    createElement('aiChatLauncher', 'button');
+    createElement('aiChatDrawer', 'div');
+    elements['aiChatDrawer'].style.display = 'none';
+    createElement('aiChatCloseBtn', 'button');
+    createElement('aiChatMessages', 'div');
+    createElement('aiChatForm', 'form');
+    createElement('aiChatInput', 'input');
+    createElement('aiChatSendBtn', 'button');
+
     const sandbox = {
       window: {
         addEventListener: () => {}
@@ -211,5 +221,21 @@ describe('Google Apps Script HtmlService Preprocessor & Dynamic Pricing Verifica
     const gcalUrl = elements['addToGoogleCalBtn'].href;
     assert.ok(gcalUrl.includes('Unit%20418') || gcalUrl.includes('Unit 418'));
     assert.ok(gcalUrl.includes('14%2C292') || gcalUrl.includes('14,292'));
+
+    // Test client-side AI agent in sandbox
+    const dogReply = vm.runInContext("resolveGuestAgentReply('are dogs allowed?')", context);
+    assert.ok(dogReply && dogReply.text);
+    assert.match(dogReply.text, /pet|dog|alaga/i);
+
+    const cookReply = vm.runInContext("resolveGuestAgentReply('can we cook?')", context);
+    assert.ok(cookReply && cookReply.text);
+    assert.match(cookReply.text, /cooking|luto/i);
+
+    // Test 1-tap applyAgentDatesToBookingForm in sandbox
+    vm.runInContext("applyAgentDatesToBookingForm('2026-12-15', '2026-12-18', 3)", context);
+    assert.equal(elements['checkInDate'].value, '2026-12-15');
+    assert.equal(elements['checkOutDate'].value, '2026-12-18');
+    assert.equal(elements['guestCount'].value, '3');
+    assert.equal(elements['staySummaryCard'].style.display, 'flex');
   });
 });

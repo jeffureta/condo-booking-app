@@ -41,4 +41,28 @@ test.describe('Condo Booking App - Accessibility (a11y) Audits', () => {
       await expect(label).toBeAttached();
     }
   });
+
+  test('AI chat drawer and launcher are accessible with proper dialog roles and labels', async ({ page }) => {
+    await page.goto('/');
+
+    const launcher = page.locator('#aiChatLauncher');
+    await expect(launcher).toBeAttached();
+    await expect(launcher).toHaveAttribute('aria-label', /Open Unit 418 AI Concierge Chat/i);
+    await expect(launcher).toHaveAttribute('aria-expanded', 'false');
+
+    await launcher.click();
+    await expect(launcher).toHaveAttribute('aria-expanded', 'true');
+
+    const drawer = page.locator('#aiChatDrawer');
+    await expect(drawer).toBeVisible();
+    await expect(drawer).toHaveAttribute('role', 'dialog');
+    await expect(drawer).toHaveAttribute('aria-modal', 'true');
+
+    const accessibilityScanResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .disableRules(['color-contrast', 'aria-required-children', 'aria-required-parent'])
+      .analyze();
+
+    expect(accessibilityScanResults.violations).toEqual([]);
+  });
 });
