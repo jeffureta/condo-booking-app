@@ -426,11 +426,6 @@
         daySpan.textContent = dayNum;
         cell.appendChild(daySpan);
 
-        var priceSpan = document.createElement('span');
-        priceSpan.className = 'cal-cell-price';
-        priceSpan.textContent = formatPhp(priceInfo.unitRate);
-        cell.appendChild(priceSpan);
-
         if (!isCurrentMonth) {
           cell.classList.add('cal-other-month');
         }

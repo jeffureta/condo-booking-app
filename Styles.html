@@ -121,9 +121,6 @@
     .cal-cell {
       min-height: 48px !important;
     }
-    .cal-cell-price {
-      font-size: 8px !important;
-    }
   }
 
   label {
@@ -374,19 +371,6 @@
     line-height: 1.1;
   }
 
-  .cal-cell-price {
-    font-size: 9.5px;
-    font-weight: 700;
-    color: var(--tagaytay-green);
-    margin-top: 2px;
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  .cal-cell.cal-peak-date .cal-cell-price {
-    color: #b91c1c;
-  }
-
   .cal-cell:hover:not(.cal-disabled):not(.cal-booked) {
     background-color: #f0fdf4;
     border-color: #86efac;
@@ -396,9 +380,6 @@
     color: #cbd5e1;
     background: #fafafa;
     border-color: transparent;
-  }
-  .cal-cell.cal-other-month .cal-cell-price {
-    color: #94a3b8;
   }
 
   .cal-cell.cal-today {
@@ -423,9 +404,6 @@
     background-color: #f8fafc;
     border-color: transparent;
   }
-  .cal-cell.cal-disabled .cal-cell-price {
-    display: none;
-  }
 
   .cal-cell.cal-booked {
     background-color: #f1f5f9;
@@ -434,9 +412,6 @@
     text-decoration: line-through;
     opacity: 0.85;
     border-color: #e2e8f0;
-  }
-  .cal-cell.cal-booked .cal-cell-price {
-    display: none;
   }
 
   .cal-cell.cal-booked::before {
@@ -456,17 +431,11 @@
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
   }
-  .cal-cell.cal-selected-start .cal-cell-price {
-    color: #bfdbfe !important;
-  }
 
   .cal-cell.cal-in-range {
     background-color: #dbeafe !important;
     color: #1e3a8a !important;
     border-radius: 0;
-  }
-  .cal-cell.cal-in-range .cal-cell-price {
-    color: #1d4ed8 !important;
   }
 
   .cal-cell.cal-selected-end {
@@ -475,17 +444,11 @@
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
   }
-  .cal-cell.cal-selected-end .cal-cell-price {
-    color: #bfdbfe !important;
-  }
 
   .cal-cell.cal-selected-single {
     background-color: var(--primary) !important;
     color: #ffffff !important;
     border-radius: 8px !important;
-  }
-  .cal-cell.cal-selected-single .cal-cell-price {
-    color: #bfdbfe !important;
   }
 
   /* Stay Summary Card & Dynamic Pricing Breakdown */
