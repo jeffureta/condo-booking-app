@@ -3,6 +3,9 @@
  * Manages calendar queries, double-booking verification, and event creation.
  */
 
+var ONLINE_AVERAGE_MARKET_RATE = 3840;
+var COMPETITOR_UNDERCUT_PHP = 500;
+
 /**
  * Calculates server-side stay quote for Unit 418 Serin East Tagaytay.
  * Uses deterministic rules to verify stay totals without client trust.
@@ -19,46 +22,8 @@ function calculateServerStayQuote(startDateStr, endDateStr, guestCount) {
   var baseUnitSubtotal = 0;
 
   for (var i = 0; i < nights; i++) {
-    var cur = new Date(inDate.getTime() + i * (24 * 60 * 60 * 1000));
-    var y = cur.getFullYear();
-    var m = String(cur.getMonth() + 1);
-    if (m.length < 2) m = '0' + m;
-    var d = String(cur.getDate());
-    if (d.length < 2) d = '0' + d;
-    var iso = y + '-' + m + '-' + d;
-
-    var monthNum = parseInt(m, 10);
-    var dayOfWeek = cur.getDay(); // 0 Sun, 5 Fri, 6 Sat
-    var isWeekend = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
-
-    // Check holiday / peak
-    var isPeak = (iso >= '2026-12-20' && iso <= '2027-01-03') ||
-                 (iso >= '2026-04-02' && iso <= '2026-04-05') ||
-                 (iso >= '2026-02-13' && iso <= '2026-02-17') ||
-                 (iso >= '2026-10-31' && iso <= '2026-11-02') ||
-                 (iso >= '2027-03-25' && iso <= '2027-03-28') ||
-                 (iso === '2026-05-01' || iso === '2026-06-12' || iso === '2026-08-21' || iso === '2026-08-31' || iso === '2026-11-30' || iso === '2026-12-08');
-
-    var baseRate = 5000;
-    var mult = 1.0;
-
-    if (monthNum === 12 || monthNum === 1 || monthNum === 2) {
-      mult = 1.10; // Amihan cool
-    } else if (monthNum >= 3 && monthNum <= 5) {
-      mult = 1.05; // Summer escape
-    } else if (monthNum >= 6 && monthNum <= 10) {
-      mult = isWeekend ? 0.95 : 0.90; // Habagat rainy
-    }
-
-    if (isPeak) {
-      baseRate = 8000;
-      mult = 1.0;
-    } else if (isWeekend) {
-      baseRate = 6200;
-    }
-
-    var marketRate = Math.round((baseRate * mult) / 50) * 50;
-    var unitRate = marketRate - 500;
+    var marketRate = Math.round(ONLINE_AVERAGE_MARKET_RATE);
+    var unitRate = marketRate - COMPETITOR_UNDERCUT_PHP;
 
     marketSubtotal += marketRate;
     baseUnitSubtotal += unitRate;
@@ -77,7 +42,7 @@ function calculateServerStayQuote(startDateStr, endDateStr, guestCount) {
     guestCount: guests,
     marketSubtotal: marketSubtotal,
     baseUnitSubtotal: baseUnitSubtotal,
-    totalSavings: (500 * nights) + discountAmount,
+    totalSavings: (COMPETITOR_UNDERCUT_PHP * nights) + discountAmount,
     discountAmount: discountAmount,
     extraGuestFee: extraGuestFee,
     totalPrice: totalPrice

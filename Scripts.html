@@ -35,6 +35,8 @@
   /* ==========================================================================
      ZERO-LATENCY DETERMINISTIC DYNAMIC PRICING ENGINE (ES5-COMPLIANT)
      ========================================================================== */
+  var ONLINE_AVERAGE_MARKET_RATE = 3840;
+  var COMPETITOR_UNDERCUT_PHP = 500;
   var PH_HOLIDAYS_AND_EVENTS = {
     '01-01': "New Year's Day",
     '02-14': "Valentine's Day Peak",
@@ -170,23 +172,21 @@
 
     var tier = 'WEEKDAY';
     var tierLabel = 'Weekday';
-    var baseMarket = 5000;
-    var mult = season.weekdayMult;
 
     if (holiday) {
       tier = 'PEAK';
       tierLabel = holiday;
-      baseMarket = 8000;
-      mult = 1.0;
     } else if (isWeekend) {
       tier = 'WEEKEND';
       tierLabel = 'Weekend';
-      baseMarket = 6200;
-      mult = season.weekendMult;
     }
 
-    var marketRate = Math.round((baseMarket * mult) / 50) * 50;
-    var unitRate = marketRate - 500; // Guaranteed -₱500/night savings
+    var baseOnlineAvg = (typeof window !== 'undefined' && window.ONLINE_AVERAGE_MARKET_RATE)
+      ? window.ONLINE_AVERAGE_MARKET_RATE
+      : ONLINE_AVERAGE_MARKET_RATE;
+
+    var marketRate = Math.round(baseOnlineAvg);
+    var unitRate = marketRate - COMPETITOR_UNDERCUT_PHP; // Guaranteed -₱500/night savings
 
     return {
       dateStr: dateStr,
@@ -195,7 +195,7 @@
       season: season,
       marketRate: marketRate,
       unitRate: unitRate,
-      savings: 500
+      savings: COMPETITOR_UNDERCUT_PHP
     };
   }
 
