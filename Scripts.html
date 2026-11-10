@@ -1302,11 +1302,107 @@
     };
   }
 
+  var CHAT_STORAGE_KEY = 'unit418_ai_chat_session_v1';
+  var MAX_STORED_CHAT_MESSAGES = 50;
+
+  var chatSessionState = {
+    sessionId: 'sess-' + Math.floor(100000 + Math.random() * 900000),
+    messages: [],
+    sessionMemory: {
+      startDate: null,
+      endDate: null,
+      guestCount: null,
+      lastLanguage: 'en',
+      lastRegister: 'warm'
+    }
+  };
+
+  function getLocalStorageSafe() {
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage) return localStorage;
+      if (typeof window !== 'undefined' && window.localStorage) return window.localStorage;
+    } catch (e) {}
+    return null;
+  }
+
+  function loadChatSessionFromStorage() {
+    var store = getLocalStorageSafe();
+    if (!store) return;
+    try {
+      var raw = store.getItem(CHAT_STORAGE_KEY);
+      if (!raw) return;
+      var parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.sessionId) chatSessionState.sessionId = parsed.sessionId;
+        if (Array.isArray(parsed.messages)) {
+          chatSessionState.messages = parsed.messages.slice(-MAX_STORED_CHAT_MESSAGES);
+        }
+        if (parsed.sessionMemory && typeof parsed.sessionMemory === 'object') {
+          chatSessionState.sessionMemory = {
+            startDate: parsed.sessionMemory.startDate || null,
+            endDate: parsed.sessionMemory.endDate || null,
+            guestCount: parsed.sessionMemory.guestCount || null,
+            lastLanguage: parsed.sessionMemory.lastLanguage || 'en',
+            lastRegister: parsed.sessionMemory.lastRegister || 'warm'
+          };
+        }
+      }
+    } catch (e) {}
+  }
+
+  function saveChatSessionToStorage() {
+    var store = getLocalStorageSafe();
+    if (!store) return;
+    try {
+      if (chatSessionState.messages.length > MAX_STORED_CHAT_MESSAGES) {
+        chatSessionState.messages = chatSessionState.messages.slice(-MAX_STORED_CHAT_MESSAGES);
+      }
+      store.setItem(CHAT_STORAGE_KEY, JSON.stringify(chatSessionState));
+    } catch (e) {}
+  }
+
+  function syncChatTurnToServer(turnPayload) {
+    try {
+      if (typeof fetch === 'function') {
+        fetch('/api/chat/message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(turnPayload)
+        }).catch(function() {});
+      }
+    } catch (e) {}
+  }
+
+  function syncChatResetToServer(sessionId) {
+    try {
+      if (typeof fetch === 'function') {
+        fetch('/api/chat/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: sessionId })
+        }).catch(function() {});
+      }
+    } catch (e) {}
+  }
+
+  function mergeSessionEntities(currentEntities, sessionMemory) {
+    var mem = sessionMemory || {};
+    var cur = currentEntities || {};
+    return {
+      startDate: cur.startDate || mem.startDate || null,
+      endDate: cur.endDate || mem.endDate || null,
+      guestCount: typeof cur.guestCount === 'number' ? cur.guestCount : (typeof mem.guestCount === 'number' ? mem.guestCount : null)
+    };
+  }
+
+  loadChatSessionFromStorage();
+
   function resolveGuestAgentReply(userMessage) {
     var stats = analyzeLanguageStatistics(userMessage);
     var language = stats.language;
     var register = stats.register;
-    var entities = extractBookingEntities(userMessage);
+    var rawEntities = extractBookingEntities(userMessage);
+    var entities = mergeSessionEntities(rawEntities, chatSessionState.sessionMemory);
     var intentAnalysis = scoreKnowledgeBaseIntents(userMessage);
     var rankedIntents = intentAnalysis.ranked;
 
@@ -1315,7 +1411,14 @@
     var hasQuote = false;
     var bookingAction = null;
 
-    if (entities.startDate && entities.endDate) {
+    var hasPricingIntent = rankedIntents.some(function(i) { return i.id === 'pricing_discounts'; });
+    var shouldEvaluateQuote = Boolean(
+      entities.startDate &&
+      entities.endDate &&
+      (rawEntities.startDate || rawEntities.endDate || rawEntities.guestCount || hasPricingIntent)
+    );
+
+    if (shouldEvaluateQuote) {
       var isConflict = currentBookedRanges.some(function(r) {
         return entities.startDate < r.to && entities.endDate > r.from;
       });
@@ -1408,6 +1511,14 @@
       text: textSections.join(' ').trim(),
       hasQuote: hasQuote,
       bookingAction: bookingAction,
+      entities: rawEntities,
+      sessionMemory: {
+        startDate: entities.startDate,
+        endDate: entities.endDate,
+        guestCount: entities.guestCount || (hasQuote ? 2 : null),
+        lastLanguage: language,
+        lastRegister: register
+      },
       stats: {
         language: stats.language,
         probabilities: stats.probabilities,
@@ -1418,6 +1529,59 @@
         intentScores: rankedIntents
       }
     };
+  }
+
+  function renderStoredMessagesToDom() {
+    var messagesEl = document.getElementById('aiChatMessages');
+    if (!messagesEl) return;
+    while (messagesEl.children && messagesEl.children.length > 0) {
+      messagesEl.removeChild(messagesEl.children[0]);
+    }
+    messagesEl.innerHTML = '';
+
+    if (chatSessionState.messages.length === 0) {
+      var welcomeDiv = document.createElement('div');
+      welcomeDiv.className = 'ai-msg ai-msg-bot';
+      var welcomeBubble = document.createElement('div');
+      welcomeBubble.className = 'ai-msg-bubble';
+      welcomeBubble.innerHTML = '👋 Kumusta! I am your Unit 418 Serin East Tagaytay AI concierge. Ask me anything about our staycation rules (e.g. <em>"are dogs allowed?"</em>, <em>"can we cook?"</em>) or check dates and pricing!';
+      welcomeDiv.appendChild(welcomeBubble);
+      messagesEl.appendChild(welcomeDiv);
+      return;
+    }
+
+    for (var i = 0; i < chatSessionState.messages.length; i++) {
+      var m = chatSessionState.messages[i];
+      appendChatMessageDomOnly(m.content, m.role, m.bookingAction);
+    }
+  }
+
+  function resumeStoredChatSession() {
+    var banner = document.getElementById('aiChatResumeBanner');
+    if (banner) banner.style.display = 'none';
+    renderStoredMessagesToDom();
+    announceStatus('Resumed previous AI concierge chat session.');
+  }
+
+  function startNewChatSession() {
+    var oldSessionId = chatSessionState.sessionId;
+    var banner = document.getElementById('aiChatResumeBanner');
+    if (banner) banner.style.display = 'none';
+
+    chatSessionState.sessionId = 'sess-' + Math.floor(100000 + Math.random() * 900000);
+    chatSessionState.messages = [];
+    chatSessionState.sessionMemory = {
+      startDate: null,
+      endDate: null,
+      guestCount: null,
+      lastLanguage: 'en',
+      lastRegister: 'warm'
+    };
+
+    saveChatSessionToStorage();
+    syncChatResetToServer(oldSessionId);
+    renderStoredMessagesToDom();
+    announceStatus('Started a new AI concierge chat session.');
   }
 
   function toggleAiChatDrawer(forcedState) {
@@ -1436,12 +1600,23 @@
     var isMobileViewport = typeof window !== 'undefined' && window.innerWidth && window.innerWidth <= 480;
 
     if (nextState) {
+      loadChatSessionFromStorage();
+      var banner = document.getElementById('aiChatResumeBanner');
+      if (banner) {
+        if (chatSessionState.messages && chatSessionState.messages.length > 0) {
+          banner.style.display = 'flex';
+          renderStoredMessagesToDom();
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+
       if (isMobileViewport && document.body && document.body.style) {
         document.body.style.overflow = 'hidden';
       }
       var input = document.getElementById('aiChatInput');
       // Do not auto-focus on mobile to keep quick-chips visible without virtual keyboard pop-up
-      if (input && !isMobileViewport) {
+      if (input && typeof input.focus === 'function' && !isMobileViewport) {
         input.focus();
       }
     } else {
@@ -1459,6 +1634,36 @@
     }
   }
 
+  function recordAndSyncConversationTurn(userText, botText, resolvedObj, engineName) {
+    chatSessionState.sessionMemory = resolvedObj.sessionMemory || chatSessionState.sessionMemory;
+    chatSessionState.messages.push({
+      role: 'user',
+      content: userText,
+      bookingAction: null
+    });
+    chatSessionState.messages.push({
+      role: 'bot',
+      content: botText,
+      bookingAction: resolvedObj.bookingAction || null
+    });
+    saveChatSessionToStorage();
+
+    syncChatTurnToServer({
+      sessionId: chatSessionState.sessionId,
+      userMessage: userText,
+      botReply: botText,
+      language: resolvedObj.language,
+      register: resolvedObj.stats ? resolvedObj.stats.register : 'warm',
+      topic: resolvedObj.topic,
+      topics: resolvedObj.topics,
+      confidence: resolvedObj.stats ? resolvedObj.stats.confidence : 0,
+      hasQuote: resolvedObj.hasQuote,
+      bookingAction: resolvedObj.bookingAction,
+      entities: resolvedObj.sessionMemory,
+      engine: engineName || 'deterministic-fallback'
+    });
+  }
+
   function handleAiChatSubmit(e) {
     if (e && e.preventDefault) e.preventDefault();
     var input = document.getElementById('aiChatInput');
@@ -1467,6 +1672,9 @@
 
     var text = input.value.trim();
     if (!text) return;
+
+    var banner = document.getElementById('aiChatResumeBanner');
+    if (banner) banner.style.display = 'none';
 
     appendChatMessage(text, 'user');
     input.value = '';
@@ -1482,22 +1690,31 @@
               'Facts: Dogs/pets allowed with diaper/carrier upon coordination. Light cooking allowed with induction stove/microwave/cookware, no smelly frying. Check-in 3PM, check-out 11AM. Beside Ayala Malls Serin. ' +
               'Answer concisely in the same language as the guest (English, Tagalog, or Taglish).';
 
+            var recentHistory = chatSessionState.messages.slice(-5);
+            var historyLines = [];
+            for (var h = 0; h < recentHistory.length; h++) {
+              var msgItem = recentHistory[h];
+              historyLines.push((msgItem.role === 'user' ? 'Guest: ' : 'Concierge: ') + msgItem.content);
+            }
+            var historyPrefix = historyLines.length > 0 ? ('Recent conversation:\n' + historyLines.join('\n') + '\n\n') : '';
+
             return window.ai.languageModel.create({ systemPrompt: sysPrompt })
               .then(function(session) {
-                return session.prompt('Guest question: ' + text + '\nAnswer:');
+                return session.prompt(historyPrefix + 'Guest question: ' + text + '\nAnswer:');
               })
               .then(function(nanoReply) {
-                if (nanoReply && nanoReply.trim().length > 0) {
-                  appendChatMessage(nanoReply.trim(), 'bot', fallback.bookingAction);
-                } else {
-                  appendChatMessage(fallback.text, 'bot', fallback.bookingAction);
-                }
+                var finalBotText = (nanoReply && nanoReply.trim().length > 0) ? nanoReply.trim() : fallback.text;
+                var engineUsed = (nanoReply && nanoReply.trim().length > 0) ? 'gemini-nano' : 'deterministic-fallback';
+                appendChatMessage(finalBotText, 'bot', fallback.bookingAction);
+                recordAndSyncConversationTurn(text, finalBotText, fallback, engineUsed);
               });
           } else {
             appendChatMessage(fallback.text, 'bot', fallback.bookingAction);
+            recordAndSyncConversationTurn(text, fallback.text, fallback, 'deterministic-fallback');
           }
         }).catch(function() {
           appendChatMessage(fallback.text, 'bot', fallback.bookingAction);
+          recordAndSyncConversationTurn(text, fallback.text, fallback, 'deterministic-fallback');
         });
         return;
       } catch (err) {
@@ -1506,9 +1723,10 @@
     }
 
     appendChatMessage(fallback.text, 'bot', fallback.bookingAction);
+    recordAndSyncConversationTurn(text, fallback.text, fallback, 'deterministic-fallback');
   }
 
-  function appendChatMessage(msgText, sender, bookingAction) {
+  function appendChatMessageDomOnly(msgText, sender, bookingAction) {
     var messagesEl = document.getElementById('aiChatMessages');
     if (!messagesEl) return;
 
@@ -1533,6 +1751,10 @@
 
     messagesEl.appendChild(msgDiv);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function appendChatMessage(msgText, sender, bookingAction) {
+    appendChatMessageDomOnly(msgText, sender, bookingAction);
   }
 
   function applyAgentDatesToBookingForm(start, end, guests) {

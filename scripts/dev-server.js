@@ -11,6 +11,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getLatestAverageMarketPrice, getLatestDailyAggregate } from '../sqlite-pricing-reader.js';
+import {
+  getChatSession,
+  saveChatTurn,
+  resetChatSession,
+  getUnresolvedInquiries,
+  getChatAnalyticsSummary
+} from '../sqlite-chat-store.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -152,6 +159,64 @@ const server = http.createServer((req, res) => {
       aggregate: aggregate,
       averagePrice: getLatestAverageMarketPrice(),
       undercutPrice: getLatestAverageMarketPrice() - 500
+    }));
+    return;
+  }
+
+  // API endpoint to retrieve SQLite chat session history & multi-turn memory
+  if (url.pathname === '/api/chat/session' && req.method === 'GET') {
+    const sessionId = url.searchParams.get('sessionId') || 'default-session';
+    const session = getChatSession(sessionId);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, session }));
+    return;
+  }
+
+  // API endpoint to persist a chat turn & NLU telemetry into SQLite
+  if (url.pathname === '/api/chat/message' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const result = saveChatTurn(payload);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, message: err.message }));
+      }
+    });
+    return;
+  }
+
+  // API endpoint to reset a SQLite chat session
+  if (url.pathname === '/api/chat/reset' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const result = resetChatSession(payload.sessionId || 'default-session');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, message: err.message }));
+      }
+    });
+    return;
+  }
+
+  // API endpoint for SQLite NLU telemetry & unresolved FAQ inquiries
+  if (url.pathname === '/api/chat/analytics' && req.method === 'GET') {
+    const summary = getChatAnalyticsSummary();
+    const unresolved = getUnresolvedInquiries({ limit: 25 });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      success: true,
+      summary,
+      unresolved
     }));
     return;
   }
