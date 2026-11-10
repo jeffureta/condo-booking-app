@@ -6,6 +6,7 @@ import {
   analyzeLanguageStatistics,
   scoreKnowledgeBaseIntents,
   extractBookingEntities,
+  mergeSessionEntities,
   resolveGuestAgentReply,
   generateHybridAgentReply
 } from '../guest-agent-core.js';
@@ -165,6 +166,93 @@ describe('Client-Side Trilingual Guest Relations & Booking Agent (TDD Red-Green-
       assert.equal(reply.engine, 'deterministic-fallback');
       assert.match(reply.text, /light cooking/i);
       assert.ok(reply.stats);
+    });
+
+    test('injects recent conversation history (up to last 5 messages) into Gemini Nano prompt', async () => {
+      let capturedPrompt = '';
+      const mockSession = {
+        prompt: async (promptText) => {
+          capturedPrompt = promptText;
+          return 'For 5 guests on those dates, the total is ₱11,720.';
+        },
+        destroy: () => {}
+      };
+      const mockAi = {
+        languageModel: {
+          capabilities: async () => ({ available: 'readily' }),
+          create: async () => mockSession
+        }
+      };
+
+      const history = [
+        { role: 'user', content: 'Is 2026-12-10 to 2026-12-13 available?' },
+        { role: 'bot', content: 'Great news! Unit 418 is available from 2026-12-10 to 2026-12-13.' }
+      ];
+
+      const reply = await generateHybridAgentReply(
+        'How much if we are 5 guests?',
+        {
+          history,
+          sessionMemory: { startDate: '2026-12-10', endDate: '2026-12-13', guestCount: 2 }
+        },
+        mockAi
+      );
+
+      assert.equal(reply.engine, 'gemini-nano');
+      assert.match(capturedPrompt, /2026-12-10 to 2026-12-13/);
+      assert.match(capturedPrompt, /How much if we are 5 guests\?/);
+      assert.equal(reply.hasQuote, true);
+      assert.equal(reply.bookingAction.guestCount, 5);
+    });
+  });
+
+  describe('Multi-Turn Conversational Memory & Entity Carryover', () => {
+    test('mergeSessionEntities carries forward prior dates when follow-up only specifies guestCount', () => {
+      const merged = mergeSessionEntities(
+        { startDate: null, endDate: null, guestCount: 5 },
+        { startDate: '2026-12-10', endDate: '2026-12-13', guestCount: 2 }
+      );
+      assert.deepEqual(merged, {
+        startDate: '2026-12-10',
+        endDate: '2026-12-13',
+        guestCount: 5
+      });
+    });
+
+    test('recalculates stay quote on follow-up guest count question using stored sessionMemory dates', () => {
+      // Turn 1: Guest asks about dates
+      const turn1 = resolveGuestAgentReply('Is 2026-12-10 to 2026-12-13 available?', { bookedRanges: [] });
+      assert.equal(turn1.hasQuote, true);
+      assert.equal(turn1.bookingAction.guestCount, 2);
+      assert.ok(turn1.sessionMemory);
+      assert.equal(turn1.sessionMemory.startDate, '2026-12-10');
+      assert.equal(turn1.sessionMemory.endDate, '2026-12-13');
+
+      // Turn 2: Guest follows up in Taglish with only new guest count
+      const turn2 = resolveGuestAgentReply('Magkano kung 5 guests?', {
+        bookedRanges: [],
+        sessionMemory: turn1.sessionMemory
+      });
+      assert.equal(turn2.hasQuote, true);
+      assert.equal(turn2.bookingAction.startDate, '2026-12-10');
+      assert.equal(turn2.bookingAction.endDate, '2026-12-13');
+      assert.equal(turn2.bookingAction.guestCount, 5);
+      assert.ok(turn2.bookingAction.totalPrice > turn1.bookingAction.totalPrice);
+      assert.equal(turn2.sessionMemory.guestCount, 5);
+    });
+
+    test('uses remembered guestCount when guest mentions group size first and dates in a later turn', () => {
+      const turn1 = resolveGuestAgentReply('Are dogs allowed if we are 6 guests?', { bookedRanges: [] });
+      assert.equal(turn1.sessionMemory.guestCount, 6);
+
+      const turn2 = resolveGuestAgentReply('Check 2026-12-15 to 2026-12-17 please', {
+        bookedRanges: [],
+        sessionMemory: turn1.sessionMemory
+      });
+      assert.equal(turn2.hasQuote, true);
+      assert.equal(turn2.bookingAction.guestCount, 6);
+      assert.equal(turn2.bookingAction.startDate, '2026-12-15');
+      assert.equal(turn2.bookingAction.endDate, '2026-12-17');
     });
   });
 });

@@ -13,3 +13,7 @@ Thumbs.db
 *.log
 .clasp-backups/
 test-results/
+data/
+*.db
+*.db-journal
+*.db-wal

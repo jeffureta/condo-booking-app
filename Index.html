@@ -253,6 +253,20 @@
     </button>
   </div>
 
+  <div id="aiChatResumeBanner" class="ai-chat-resume-banner" role="region" aria-label="Previous conversation options" style="display: none;">
+    <div class="ai-resume-text">
+      <strong>Previous chat found.</strong> Resume previous chat or start new?
+    </div>
+    <div class="ai-resume-actions">
+      <button type="button" id="aiChatResumeBtn" class="ai-resume-btn ai-resume-btn-primary" onclick="resumeStoredChatSession()">
+        Resume previous chat
+      </button>
+      <button type="button" id="aiChatStartNewBtn" class="ai-resume-btn ai-resume-btn-secondary" onclick="startNewChatSession()">
+        Start new
+      </button>
+    </div>
+  </div>
+
   <div id="aiChatMessages" class="ai-chat-messages" role="log" aria-live="polite">
     <div class="ai-msg ai-msg-bot">
       <div class="ai-msg-bubble">

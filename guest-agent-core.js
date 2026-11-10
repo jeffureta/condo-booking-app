@@ -379,8 +379,30 @@ export function extractBookingEntities(text, todayIso) {
 }
 
 /**
+ * Merges newly extracted booking entities with prior session memory across turns.
+ */
+export function mergeSessionEntities(currentEntities = {}, sessionMemory = {}) {
+  if (!sessionMemory) {
+    return {
+      startDate: currentEntities?.startDate || null,
+      endDate: currentEntities?.endDate || null,
+      guestCount: typeof currentEntities?.guestCount === 'number' ? currentEntities.guestCount : null
+    };
+  }
+
+  return {
+    startDate: currentEntities?.startDate || sessionMemory.startDate || null,
+    endDate: currentEntities?.endDate || sessionMemory.endDate || null,
+    guestCount:
+      typeof currentEntities?.guestCount === 'number'
+        ? currentEntities.guestCount
+        : (typeof sessionMemory.guestCount === 'number' ? sessionMemory.guestCount : null)
+  };
+}
+
+/**
  * Synchronous statistical trilingual agent resolver.
- * Features multi-intent synthesis, register adaptation, and stats telemetry.
+ * Features multi-intent synthesis, register adaptation, multi-turn entity memory, and stats telemetry.
  */
 export function resolveGuestAgentReply(userMessage, context = {}) {
   const stats = analyzeLanguageStatistics(userMessage);
@@ -388,7 +410,8 @@ export function resolveGuestAgentReply(userMessage, context = {}) {
   const register = stats.register;
   const bookedRanges = context.bookedRanges || [];
 
-  const entities = extractBookingEntities(userMessage);
+  const rawEntities = extractBookingEntities(userMessage);
+  const entities = mergeSessionEntities(rawEntities, context.sessionMemory);
   const intentAnalysis = scoreKnowledgeBaseIntents(userMessage);
   const rankedIntents = intentAnalysis.ranked;
 
@@ -397,8 +420,17 @@ export function resolveGuestAgentReply(userMessage, context = {}) {
   let hasQuote = false;
   let bookingAction = null;
 
-  // 1. Check Date Booking / Availability Quote Intent
-  if (entities.startDate && entities.endDate) {
+  const shouldEvaluateQuote = Boolean(
+    entities.startDate &&
+    entities.endDate &&
+    (rawEntities.startDate ||
+      rawEntities.endDate ||
+      rawEntities.guestCount ||
+      rankedIntents.some(i => i.id === 'pricing_discounts'))
+  );
+
+  // 1. Check Date Booking / Availability Quote Intent (Direct or Multi-Turn Carryover)
+  if (shouldEvaluateQuote) {
     const isConflict = bookedRanges.some(r => entities.startDate < r.to && entities.endDate > r.from);
 
     if (isConflict) {
@@ -491,6 +523,14 @@ export function resolveGuestAgentReply(userMessage, context = {}) {
     text: textSections.join(' ').trim(),
     hasQuote,
     bookingAction,
+    entities: rawEntities,
+    sessionMemory: {
+      startDate: entities.startDate,
+      endDate: entities.endDate,
+      guestCount: entities.guestCount || (hasQuote ? 2 : null),
+      lastLanguage: language,
+      lastRegister: register
+    },
     stats: {
       ...stats,
       confidence: intentAnalysis.confidence,
@@ -500,7 +540,7 @@ export function resolveGuestAgentReply(userMessage, context = {}) {
 }
 
 /**
- * Hybrid Generator using Chrome's built-in Gemini Nano (window.ai) with statistical context.
+ * Hybrid Generator using Chrome's built-in Gemini Nano (window.ai) with statistical & multi-turn context.
  */
 export async function generateHybridAgentReply(userMessage, context = {}, aiNamespace = null) {
   const fallbackResult = resolveGuestAgentReply(userMessage, context);
@@ -526,7 +566,16 @@ Language: ${stats.language}. Register: ${stats.register}. Keep response concise 
           systemPrompt: systemPrompt
         });
 
-        const prompt = `Guest inquiry: ${userMessage}\nConcierge answer:`;
+        let historyBlock = '';
+        if (Array.isArray(context.history) && context.history.length > 0) {
+          const recent = context.history.slice(-5);
+          const formattedTurns = recent
+            .map(m => `${m.role === 'user' ? 'Guest' : 'Concierge'}: ${m.content}`)
+            .join('\n');
+          historyBlock = `Recent conversation:\n${formattedTurns}\n\n`;
+        }
+
+        const prompt = `${historyBlock}Guest inquiry: ${userMessage}\nConcierge answer:`;
         const nanoResponse = await session.prompt(prompt);
         if (session.destroy) session.destroy();
 

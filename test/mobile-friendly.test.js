@@ -53,6 +53,13 @@ describe('Mobile-Friendly UI & TDD Engine Contracts', () => {
       assert.match(rawStyles, /100dvh/, 'Styles.html should declare 100dvh for modern mobile viewports');
       assert.match(rawStyles, /env\(safe-area-inset-bottom/, 'Styles.html should handle safe area bottom inset');
     });
+
+    test('Index.html and Styles.html include accessible Resume/Start New chat banner with >= 44px touch targets', () => {
+      assert.match(rawIndex, /id="aiChatResumeBanner"/, 'Index.html must include #aiChatResumeBanner');
+      assert.match(rawIndex, /id="aiChatResumeBtn"/, 'Index.html must include #aiChatResumeBtn');
+      assert.match(rawIndex, /id="aiChatStartNewBtn"/, 'Index.html must include #aiChatStartNewBtn');
+      assert.match(rawStyles, /\.ai-resume-btn\s*\{[^}]*min-height:\s*44px/s, '.ai-resume-btn must enforce min-height: 44px');
+    });
   });
 
   describe('Sandbox Execution & Mobile Logic', () => {
