@@ -224,16 +224,14 @@ describe('Google Apps Script HtmlService Preprocessor & Dynamic Pricing Verifica
     vm.runInContext("updateStaySummary()", context);
 
     assert.equal(elements['staySummaryCard'].style.display, 'flex');
-    assert.ok(elements['summaryTotalPrice'].textContent.includes('₱14,292'));
-    assert.ok(elements['summarySavingsBadge'].textContent.includes('Save'));
-    assert.equal(elements['summaryDiscountRow'].style.display, 'flex');
+    assert.ok(elements['summaryTotalPrice'].textContent.includes('₱14,960'));
     assert.equal(elements['summaryExtraGuestRow'].style.display, 'flex');
 
     // Test confirmation and link generation
-    vm.runInContext("setupGoogleCalendarLink('CND-1234', 14292)", context);
+    vm.runInContext("setupGoogleCalendarLink('CND-1234', 14960)", context);
     const gcalUrl = elements['addToGoogleCalBtn'].href;
     assert.ok(gcalUrl.includes('Unit%20418') || gcalUrl.includes('Unit 418'));
-    assert.ok(gcalUrl.includes('14%2C292') || gcalUrl.includes('14,292'));
+    assert.ok(gcalUrl.includes('14%2C960') || gcalUrl.includes('14,960'));
 
     // Test client-side AI agent in sandbox
     const dogReply = vm.runInContext("resolveGuestAgentReply('are dogs allowed?')", context);

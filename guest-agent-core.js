@@ -115,20 +115,20 @@ export const KNOWLEDGE_BASE_LAYER = {
   },
   pricing_discounts: {
     id: 'pricing_discounts',
-    title: 'Pricing & Discounts',
+    title: 'Pricing & Rates',
     keywords: ['rate', 'rates', 'price', 'pricing', 'magkano', 'how much', 'cost', 'discount', 'mura', 'bawas', 'presyo', 'singil', 'promo'],
     responses: {
       en: {
-        warm: 'Our dynamic rates guarantee a ₱500/night undercut compared to the 10km Tagaytay 2BR market average! Plus enjoy 5% off for 3+ nights.',
-        polite: 'Our dynamic rates guarantee a ₱500/night undercut compared to the 10km Tagaytay 2BR market average. In addition, we are pleased to offer a 5% discount for stays of 3+ nights.'
+        warm: 'Our dynamic nightly rates adjust automatically based on season and demand to give you the best direct value for your Tagaytay staycation!',
+        polite: 'Our dynamic rates are calibrated daily to ensure competitive and transparent pricing for your Tagaytay staycation.'
       },
       tl: {
-        warm: 'Garantisadong mas mababa ng ₱500 bawat gabi ang presyo natin kumpara sa 10km Tagaytay 2BR market average! May 5% discount sa 3+ nights.',
-        polite: 'Garantisado po na mas mababa ng ₱500 bawat gabi ang aming presyo kumpara sa 10km Tagaytay market average. Mayroon din po tayong 5% discount para sa 3+ nights.'
+        warm: 'Naka-calibrate ang aming dynamic rates base sa season at demand para mabigyan kayo ng pinakasulit na presyo para sa inyong staycation!',
+        polite: 'Ang aming mga rates po ay regular na ina-adjust ayon sa season upang masiguro ang abot-kaya at tapat na presyo para sa inyong staycation.'
       },
       taglish: {
-        warm: 'Guaranteed ₱500/night savings tayo compared sa 10km Tagaytay 2BR market average! May extra 5% off for 3+ nights.',
-        polite: 'Guaranteed ₱500/night savings po tayo compared sa 10km Tagaytay market average! Mayroon din pong extra 5% discount for 3+ nights.'
+        warm: 'Dynamic ang nightly rates natin base sa season and demand para guaranteed sulit ang Tagaytay staycation ninyo!',
+        polite: 'Dynamic po ang rates natin base sa season at demand upang masiguro ang best value para sa inyong staycation.'
       }
     }
   }

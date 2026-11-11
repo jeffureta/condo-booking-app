@@ -236,19 +236,15 @@ export function calculateStayQuote(checkInStr, checkOutStr, guestCount = 2, mark
     baseUnitSubtotal += nightly.unitRate;
   }
 
-  // Multi-night discount on unit subtotal
+  // Multi-night discounts removed
   let longStayDiscountRate = 0;
   let longStayDiscountLabel = null;
-  if (nights >= 3) {
-    longStayDiscountRate = 0.05;
-    longStayDiscountLabel = 'Extended Staycation Discount (5% Off)';
-  }
 
-  const longStayDiscountAmount = Math.round(baseUnitSubtotal * longStayDiscountRate);
+  const longStayDiscountAmount = 0;
   const extraGuestFeeTotal = extraGuests * PROPERTY_INFO.extraGuestFeePerNight * nights;
-  const totalPrice = baseUnitSubtotal - longStayDiscountAmount + extraGuestFeeTotal;
+  const totalPrice = baseUnitSubtotal + extraGuestFeeTotal;
   const competitorUndercutSavings = COMPETITOR_UNDERCUT_PHP * nights;
-  const totalSavingsVsMarket = competitorUndercutSavings + longStayDiscountAmount;
+  const totalSavingsVsMarket = competitorUndercutSavings;
   const averageNightlyRate = Math.round(totalPrice / nights);
 
   return {
