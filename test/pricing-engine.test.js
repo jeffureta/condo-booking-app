@@ -110,15 +110,16 @@ describe('Zero-Latency Dynamic Pricing Engine with Live DB Average (TDD)', () =>
     assert.equal(quote4Nights5Guests.extraGuestFeeTotal, 1600);
     assert.equal(quote4Nights5Guests.totalPrice, 14292);
 
-    // 7-night weekly stay (10% discount)
+    // 7-night stay (weekly 10% discount removed, 5% applies for 3+ nights)
     // Base: 7 * 3340 = 23380
-    // 10% discount: 2338
-    // Total for 4 guests: 23380 - 2338 = 21042
+    // 5% discount: Math.round(23380 * 0.05) = 1169
+    // Total for 4 guests: 23380 - 1169 = 22211
     const quote7Nights = calculateStayQuote('2026-11-10', '2026-11-17', 4);
     assert.equal(quote7Nights.nights, 7);
     assert.equal(quote7Nights.baseUnitSubtotal, 23380);
-    assert.equal(quote7Nights.longStayDiscountRate, 0.10);
-    assert.equal(quote7Nights.longStayDiscountAmount, 2338);
-    assert.equal(quote7Nights.totalPrice, 21042);
+    assert.equal(quote7Nights.longStayDiscountRate, 0.05);
+    assert.equal(quote7Nights.longStayDiscountAmount, 1169);
+    assert.equal(quote7Nights.longStayDiscountLabel, 'Extended Staycation Discount (5% Off)');
+    assert.equal(quote7Nights.totalPrice, 22211);
   });
 });
