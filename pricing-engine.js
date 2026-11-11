@@ -239,10 +239,7 @@ export function calculateStayQuote(checkInStr, checkOutStr, guestCount = 2, mark
   // Multi-night discount on unit subtotal
   let longStayDiscountRate = 0;
   let longStayDiscountLabel = null;
-  if (nights >= 7) {
-    longStayDiscountRate = 0.10;
-    longStayDiscountLabel = 'Weekly Staycation Discount (10% Off)';
-  } else if (nights >= 3) {
+  if (nights >= 3) {
     longStayDiscountRate = 0.05;
     longStayDiscountLabel = 'Extended Staycation Discount (5% Off)';
   }
