@@ -98,28 +98,29 @@ describe('Zero-Latency Dynamic Pricing Engine with Live DB Average (TDD)', () =>
 
     // 4-night stay for 5 guests
     // Base unit subtotal: 4 * 3340 = 13360
-    // 5% multi-night discount: Math.round(13360 * 0.05) = 668
+    // Multi-night discount removed: 0
     // Extra guest fee: 1 extra guest * 400 * 4 nights = 1600
-    // Total price = 13360 - 668 + 1600 = 14292
+    // Total price = 13360 + 1600 = 14960
     const quote4Nights5Guests = calculateStayQuote('2026-11-10', '2026-11-14', 5);
     assert.equal(quote4Nights5Guests.nights, 4);
     assert.equal(quote4Nights5Guests.extraGuests, 1);
     assert.equal(quote4Nights5Guests.baseUnitSubtotal, 13360);
-    assert.equal(quote4Nights5Guests.longStayDiscountRate, 0.05);
-    assert.equal(quote4Nights5Guests.longStayDiscountAmount, 668);
+    assert.equal(quote4Nights5Guests.longStayDiscountRate, 0);
+    assert.equal(quote4Nights5Guests.longStayDiscountAmount, 0);
+    assert.equal(quote4Nights5Guests.longStayDiscountLabel, null);
     assert.equal(quote4Nights5Guests.extraGuestFeeTotal, 1600);
-    assert.equal(quote4Nights5Guests.totalPrice, 14292);
+    assert.equal(quote4Nights5Guests.totalPrice, 14960);
 
-    // 7-night stay (weekly 10% discount removed, 5% applies for 3+ nights)
+    // 7-night stay (multi-night discounts removed)
     // Base: 7 * 3340 = 23380
-    // 5% discount: Math.round(23380 * 0.05) = 1169
-    // Total for 4 guests: 23380 - 1169 = 22211
+    // Discount: 0
+    // Total for 4 guests: 23380
     const quote7Nights = calculateStayQuote('2026-11-10', '2026-11-17', 4);
     assert.equal(quote7Nights.nights, 7);
     assert.equal(quote7Nights.baseUnitSubtotal, 23380);
-    assert.equal(quote7Nights.longStayDiscountRate, 0.05);
-    assert.equal(quote7Nights.longStayDiscountAmount, 1169);
-    assert.equal(quote7Nights.longStayDiscountLabel, 'Extended Staycation Discount (5% Off)');
-    assert.equal(quote7Nights.totalPrice, 22211);
+    assert.equal(quote7Nights.longStayDiscountRate, 0);
+    assert.equal(quote7Nights.longStayDiscountAmount, 0);
+    assert.equal(quote7Nights.longStayDiscountLabel, null);
+    assert.equal(quote7Nights.totalPrice, 23380);
   });
 });

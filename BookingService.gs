@@ -30,18 +30,16 @@ function calculateServerStayQuote(startDateStr, endDateStr, guestCount) {
   }
 
   var discountRate = 0;
-  if (nights >= 3) discountRate = 0.05;
-
-  var discountAmount = Math.round(baseUnitSubtotal * discountRate);
+  var discountAmount = 0;
   var extraGuestFee = extraGuests * 400 * nights;
-  var totalPrice = baseUnitSubtotal - discountAmount + extraGuestFee;
+  var totalPrice = baseUnitSubtotal + extraGuestFee;
 
   return {
     nights: nights,
     guestCount: guests,
     marketSubtotal: marketSubtotal,
     baseUnitSubtotal: baseUnitSubtotal,
-    totalSavings: (COMPETITOR_UNDERCUT_PHP * nights) + discountAmount,
+    totalSavings: COMPETITOR_UNDERCUT_PHP * nights,
     discountAmount: discountAmount,
     extraGuestFee: extraGuestFee,
     totalPrice: totalPrice

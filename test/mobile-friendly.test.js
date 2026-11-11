@@ -219,7 +219,7 @@ describe('Mobile-Friendly UI & TDD Engine Contracts', () => {
       assert.equal(vm.runInContext('formatCompactPhp(800)', context), '₱800');
     });
 
-    test('renderCalendar renders compact price sub-labels (.cal-cell-sub) on cells', () => {
+    test('renderCalendar does NOT render price sub-labels (.cal-cell-sub) on available cells', () => {
       const { context, elements } = createSandbox();
       const grid = elements['customCalendarGrid'];
       assert.ok(grid.children.length > 0, 'Calendar grid should have rendered cells');
@@ -230,7 +230,7 @@ describe('Mobile-Friendly UI & TDD Engine Contracts', () => {
       
       const subLabel = availableCell.children.find(child => child.classList && child.classList.contains('cal-cell-sub'));
       assert.ok(subLabel, 'Available cell should contain a .cal-cell-sub element');
-      assert.match(subLabel.textContent, /^₱[\d\.]+k$/, 'Sublabel should display compact rate like ₱3.3k');
+      assert.equal(subLabel.textContent, '', 'Sublabel should be empty for available dates (rate removed)');
     });
 
     test('Mobile AI Drawer toggling locks body scroll and suppresses auto-focus on mobile viewports', () => {

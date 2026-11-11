@@ -12,7 +12,8 @@
     "sync:pricing": "node scripts/sync-db-pricing.js",
     "clasp:status": "clasp status",
     "clasp:push": "clasp push",
-    "clasp:deploy": "clasp deploy"
+    "clasp:deploy": "clasp deploy",
+    "ship": "node ~/.gemini/config/skills/smart-git-clasp/scripts/ship.js"
   },
   "keywords": [
     "google-apps-script",
