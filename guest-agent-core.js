@@ -40,7 +40,8 @@ export const KNOWLEDGE_BASE_LAYER = {
   cooking: {
     id: 'cooking',
     title: 'Kitchen & Cooking',
-    keywords: ['cook', 'cooking', 'kitchen', 'stove', 'microwave', 'lutuan', 'magluto', 'luto', 'pagkain', 'fridge', 'ref', 'refrigerator', 'utensils', 'kalan', 'ulam', 'breakfast', 'magluluto', 'nagluto'],
+    keywords: ['cook', 'cooking', 'kitchen', 'stove', 'microwave', 'lutuan', 'magluto', 'luto', 'pagkain', 'fridge', 'ref', 'refrigerator', 'utensils', 'kalan', 'ulam', 'breakfast', 'magluluto', 'nagluto', 'induction'],
+    actionPill: { text: '📖 View Appliance Guide', targetSection: 'induction_cooktop' },
     responses: {
       en: {
         warm: 'Yes, light cooking is allowed! The kitchen features an induction stove, range hood, microwave, refrigerator, rice cooker, electric kettle, and cookware/utensils. Please avoid heavy or smelly frying (such as dried fish/tuyo).',
@@ -79,6 +80,7 @@ export const KNOWLEDGE_BASE_LAYER = {
     id: 'amenities_wifi',
     title: 'Amenities & Wi-Fi',
     keywords: ['wifi', 'wi-fi', 'internet', 'pool', 'swimming', 'amenities', 'paliguan', 'towels', 'netflix', 'tv', 'shower', 'heater'],
+    actionPill: { text: '📖 View House Manual', targetSection: 'wifi' },
     responses: {
       en: {
         warm: 'Unit 418 includes high-speed fiber Wi-Fi, Smart TV with Netflix, hot & cold shower, fresh linens, and access to the Serin East swimming pool & garden amenity areas.',
@@ -97,19 +99,20 @@ export const KNOWLEDGE_BASE_LAYER = {
   parking_location: {
     id: 'parking_location',
     title: 'Location & Parking',
-    keywords: ['parking', 'park', 'sasakyan', 'location', 'address', 'saan', 'serin', 'ayala', 'simbahan', 'lourdes', 'staycation', 'direksyon', 'mapa'],
+    keywords: ['parking', 'park', 'sasakyan', 'location', 'address', 'saan', 'serin', 'ayala', 'simbahan', 'lourdes', 'staycation', 'direksyon', 'mapa', 'kotse', 'tower'],
+    actionPill: { text: '📖 View Parking Guide', targetSection: 'parking' },
     responses: {
       en: {
-        warm: 'We are located at Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, right beside Ayala Malls Serin and Lourdes Church! Pay parking is available on-site.',
-        polite: 'We are conveniently located at Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, right beside Ayala Malls Serin and Lourdes Church. Pay parking is conveniently available on-site.'
+        warm: 'We are located at Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, right beside Ayala Malls Serin and Lourdes Church! Covered tower parking is ₱350/night with advance admin endorsement, and free street parking is available in front.',
+        polite: 'We are conveniently located at Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, right beside Ayala Malls Serin and Lourdes Church. Covered tower parking is available at ₱350/night with advance admin endorsement, as well as designated street parking.'
       },
       tl: {
-        warm: 'Nasa Unit 418 Serin East Tagaytay kami, Brgy. Silang Crossing East, katabi ng Ayala Malls Serin at Lourdes Church! May available na on-site pay parking.',
-        polite: 'Matatagpuan po ang Unit 418 sa Serin East Tagaytay, Brgy. Silang Crossing East, katabi mismo ng Ayala Malls Serin at Lourdes Church. Mayroon po itong convenient on-site pay parking para sa inyong sasakyan.'
+        warm: 'Nasa Unit 418 Serin East Tagaytay kami, Brgy. Silang Crossing East, katabi ng Ayala Malls Serin at Lourdes Church! May covered tower parking sa halagang ₱350/gabi (advance endorsement) at libreng street parking sa tapat.',
+        polite: 'Matatagpuan po ang Unit 418 sa Serin East Tagaytay, Brgy. Silang Crossing East, katabi mismo ng Ayala Malls Serin at Lourdes Church. Mayroon po itong covered tower parking sa halagang ₱350/gabi na may advance admin endorsement, at libreng street parking sa tapat.'
       },
       taglish: {
-        warm: 'Very accessible location right beside Ayala Malls Serin and Lourdes Church sa Brgy. Silang Crossing East, Tagaytay City! May pay parking po sa building.',
-        polite: 'Very accessible po ang location right beside Ayala Malls Serin and Lourdes Church sa Tagaytay City. May available on-site pay parking din po.'
+        warm: 'Very accessible location right beside Ayala Malls Serin and Lourdes Church sa Brgy. Silang Crossing East, Tagaytay City! Covered tower parking is ₱350/night with advance endorsement, and street parking is free.',
+        polite: 'Very accessible po ang location right beside Ayala Malls Serin and Lourdes Church sa Tagaytay City. May covered tower parking po at ₱350/night with advance admin endorsement, plus street parking options.'
       }
     }
   },
@@ -515,12 +518,14 @@ export function resolveGuestAgentReply(userMessage, context = {}) {
   }
 
   const primaryTopic = topics[0] || 'general_help';
+  const actionPill = selectedFaqItems.find(item => item.actionPill)?.actionPill || null;
 
   return {
     topic: primaryTopic,
     topics,
     language,
     text: textSections.join(' ').trim(),
+    actionPill,
     hasQuote,
     bookingAction,
     entities: rawEntities,
