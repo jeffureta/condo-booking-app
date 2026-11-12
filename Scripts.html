@@ -1739,6 +1739,22 @@
       msgDiv.appendChild(actionBtn);
     }
 
+    if (bookingAction && bookingAction.actionPill) {
+      var pill = bookingAction.actionPill;
+      var pillBtn = document.createElement('button');
+      pillBtn.type = 'button';
+      pillBtn.className = 'ai-action-pill-btn';
+      pillBtn.innerHTML = escapeHtml(pill.text);
+      pillBtn.onclick = function() {
+        toggleAiChatDrawer(false);
+        switchMainTab('guidebook');
+        if (pill.targetSection) {
+          scrollToGuideSection(pill.targetSection);
+        }
+      };
+      msgDiv.appendChild(pillBtn);
+    }
+
     messagesEl.appendChild(msgDiv);
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
@@ -1757,4 +1773,103 @@
     var formEl = document.getElementById('bookingForm');
     if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
   }
+
+  /* ==========================================================================
+     MAIN TAB SWITCHING & GUIDEBOOK CONTROLLERS (ES5-COMPLIANT)
+     ========================================================================== */
+  function switchMainTab(tabName) {
+    var bookingTab = document.getElementById('bookingTabView');
+    var guidebookTab = document.getElementById('guidebookTabView');
+    var tabBtnBooking = document.getElementById('tabNavBooking');
+    var tabBtnGuidebook = document.getElementById('tabNavGuidebook');
+
+    if (tabName === 'guidebook') {
+      if (bookingTab) bookingTab.style.display = 'none';
+      if (guidebookTab) guidebookTab.style.display = 'block';
+      if (tabBtnBooking) tabBtnBooking.className = 'tab-nav-btn';
+      if (tabBtnGuidebook) tabBtnGuidebook.className = 'tab-nav-btn active';
+    } else {
+      if (bookingTab) bookingTab.style.display = 'block';
+      if (guidebookTab) guidebookTab.style.display = 'none';
+      if (tabBtnBooking) tabBtnBooking.className = 'tab-nav-btn active';
+      if (tabBtnGuidebook) tabBtnGuidebook.className = 'tab-nav-btn';
+    }
+  }
+
+  function copyWifiPassword() {
+    var pwd = 'TagaytayStaycation418!';
+    var copyBtn = document.getElementById('btnCopyWifi');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(pwd).then(function() {
+        if (copyBtn) {
+          var original = copyBtn.innerHTML;
+          copyBtn.innerHTML = '✅ Copied!';
+          setTimeout(function() { copyBtn.innerHTML = original; }, 2500);
+        }
+      });
+    } else {
+      var temp = document.createElement('textarea');
+      temp.value = pwd;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      if (copyBtn) {
+        var orig = copyBtn.innerHTML;
+        copyBtn.innerHTML = '✅ Copied!';
+        setTimeout(function() { copyBtn.innerHTML = orig; }, 2500);
+      }
+    }
+  }
+
+  function scrollToGuideSection(sectionIdOrKey) {
+    switchMainTab('guidebook');
+    var targetEl = document.getElementById(sectionIdOrKey);
+    if (!targetEl) {
+      // Map keys to element IDs
+      if (sectionIdOrKey === 'parking') targetEl = document.getElementById('guideSectionParking');
+      else if (sectionIdOrKey === 'pool') targetEl = document.getElementById('guideSectionPool');
+      else if (sectionIdOrKey === 'wifi') targetEl = document.getElementById('guideSectionAppliances');
+      else if (sectionIdOrKey === 'induction_cooktop') targetEl = document.getElementById('guideSectionAppliances');
+    }
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  function handleGuidebookSearch(query) {
+    var q = (query || '').toLowerCase().trim();
+    var cards = document.querySelectorAll('.guide-card, .guide-spot-card');
+    var notice = document.getElementById('guidebookResultsNotice');
+    var matchCount = 0;
+
+    for (var i = 0; i < cards.length; i++) {
+      var itemData = (cards[i].getAttribute('data-guide-item') || '').toLowerCase();
+      var cardText = (cards[i].textContent || '').toLowerCase();
+      if (!q || itemData.indexOf(q) !== -1 || cardText.indexOf(q) !== -1) {
+        cards[i].style.display = '';
+        matchCount++;
+      } else {
+        cards[i].style.display = 'none';
+      }
+    }
+
+    if (notice) {
+      if (q && matchCount === 0) {
+        notice.style.display = 'block';
+        notice.innerHTML = 'No guidebook matches found for "' + escapeHtml(q) + '". Try searching for "ac", "wifi", "parking", or "cook".';
+      } else {
+        notice.style.display = 'none';
+      }
+    }
+  }
+
+  // Check URL parameters on page load for deep link ?page=guidebook or #guidebook
+  window.addEventListener('DOMContentLoaded', function() {
+    var searchStr = window.location.search || '';
+    var hashStr = window.location.hash || '';
+    if (searchStr.indexOf('page=guidebook') !== -1 || hashStr.indexOf('guidebook') !== -1) {
+      switchMainTab('guidebook');
+    }
+  });
 </script>
