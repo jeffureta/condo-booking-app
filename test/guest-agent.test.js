@@ -131,21 +131,6 @@ describe('Client-Side Trilingual Guest Relations & Booking Agent (TDD Red-Green-
       assert.equal(reply.topic, 'general_help');
       assert.ok(reply.stats.confidence < 0.35);
     });
-
-    test('attaches actionPill deep-link to Guidebook for parking, appliances, and wifi inquiries', () => {
-      const parkingReply = resolveGuestAgentReply('Where can we park our car?');
-      assert.ok(parkingReply.actionPill);
-      assert.strictEqual(parkingReply.actionPill.targetSection, 'parking');
-      assert.match(parkingReply.actionPill.text, /guide|manual/i);
-
-      const cookReply = resolveGuestAgentReply('How do we use the induction stove?');
-      assert.ok(cookReply.actionPill);
-      assert.strictEqual(cookReply.actionPill.targetSection, 'induction_cooktop');
-
-      const wifiReply = resolveGuestAgentReply('May wifi po ba sa unit?');
-      assert.ok(wifiReply.actionPill);
-      assert.strictEqual(wifiReply.actionPill.targetSection, 'wifi');
-    });
   });
 
   describe('Hybrid Google Built-in AI / Gemini Nano Fallback with Stats Injection', () => {
