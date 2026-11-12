@@ -18,121 +18,265 @@ import { calculateStayQuote, COMPETITOR_UNDERCUT_PHP } from './pricing-engine.js
  * ============================================================================
  */
 export const KNOWLEDGE_BASE_LAYER = {
-  pets: {
-    id: 'pets',
-    title: 'Pet Policy',
-    keywords: ['dog', 'dogs', 'pet', 'pets', 'cat', 'cats', 'aso', 'pusa', 'alaga', 'hayop', 'pet-friendly', 'puppy', 'kitten', 'tuta'],
-    responses: {
-      en: {
-        warm: 'Small, well-behaved pets (such as small dogs and cats) are welcome upon prior coordination! Please bring pet diapers/wee pads and a pet carrier when walking through Serin East common areas.',
-        polite: 'Yes, we are delighted to welcome small, well-behaved pets (small dogs and cats) upon prior coordination. We kindly request guests to bring pet diapers/wee pads and a pet carrier when passing through Serin East common areas.'
+  "pets": {
+    "id": "pets",
+    "title": "Pet Policy",
+    "keywords": [
+      "dog",
+      "dogs",
+      "pet",
+      "pets",
+      "cat",
+      "cats",
+      "aso",
+      "pusa",
+      "alaga",
+      "hayop",
+      "pet-friendly",
+      "puppy",
+      "kitten",
+      "tuta"
+    ],
+    "responses": {
+      "en": {
+        "warm": "Small, well-behaved pets (such as small dogs and cats) are welcome upon prior coordination! Please bring pet diapers/wee pads and a pet carrier when walking through Serin East common areas.",
+        "polite": "Yes, we are delighted to welcome small, well-behaved pets (small dogs and cats) upon prior coordination. We kindly request guests to bring pet diapers/wee pads and a pet carrier when passing through Serin East common areas."
       },
-      tl: {
-        warm: 'Welcome ang maliliit at mababait na alagang hayop (aso o pusa) basta ipagbigay-alam muna! Magdala lang ng pet diaper at carrier kapag dadaan sa common areas ng Serin East.',
-        polite: 'Opo, malugod po naming tinatanggap ang maliliit at mababait na alagang hayop (aso o pusa) basta ipagbigay-alam lamang po muna. Paki-dala lamang po ng pet diaper at carrier kapag dadaan sa Serin East common areas.'
+      "tl": {
+        "warm": "Welcome ang maliliit at mababait na alagang hayop (aso o pusa) basta ipagbigay-alam muna! Magdala lang ng pet diaper at carrier kapag dadaan sa common areas ng Serin East.",
+        "polite": "Opo, malugod po naming tinatanggap ang maliliit at mababait na alagang hayop (aso o pusa) basta ipagbigay-alam lamang po muna. Paki-dala lamang po ng pet diaper at carrier kapag dadaan sa Serin East common areas."
       },
-      taglish: {
-        warm: 'Yes, pet-friendly tayo for small dogs and cats upon prior coordination! Just bring pet diapers and a carrier kapag dadaan sa Serin East common areas.',
-        polite: 'Opo, pet-friendly po tayo for small dogs and cats upon prior coordination! Paki-bring na lang po ng pet diapers and carrier kapag dadaan sa Serin East common areas.'
+      "taglish": {
+        "warm": "Yes, pet-friendly tayo for small dogs and cats upon prior coordination! Just bring pet diapers and a carrier kapag dadaan sa Serin East common areas.",
+        "polite": "Opo, pet-friendly po tayo for small dogs and cats upon prior coordination! Paki-bring na lang po ng pet diapers and carrier kapag dadaan sa Serin East common areas."
       }
     }
   },
-  cooking: {
-    id: 'cooking',
-    title: 'Kitchen & Cooking',
-    keywords: ['cook', 'cooking', 'kitchen', 'stove', 'microwave', 'lutuan', 'magluto', 'luto', 'pagkain', 'fridge', 'ref', 'refrigerator', 'utensils', 'kalan', 'ulam', 'breakfast', 'magluluto', 'nagluto'],
-    responses: {
-      en: {
-        warm: 'Yes, light cooking is allowed! The kitchen features an induction stove, range hood, microwave, refrigerator, rice cooker, electric kettle, and cookware/utensils. Please avoid heavy or smelly frying (such as dried fish/tuyo).',
-        polite: 'Yes, light cooking is permitted in the unit. The kitchen is fully equipped with an induction stove, microwave, refrigerator, rice cooker, electric kettle, and cookware. We kindly ask to refrain from heavy or smelly frying (such as dried fish/tuyo).'
+  "cooking": {
+    "id": "cooking",
+    "title": "Kitchen & Cooking",
+    "keywords": [
+      "cook",
+      "cooking",
+      "kitchen",
+      "stove",
+      "microwave",
+      "lutuan",
+      "magluto",
+      "luto",
+      "pagkain",
+      "fridge",
+      "ref",
+      "refrigerator",
+      "utensils",
+      "kalan",
+      "ulam",
+      "breakfast",
+      "magluluto",
+      "nagluto"
+    ],
+    "responses": {
+      "en": {
+        "warm": "Yes, light cooking is allowed! The kitchen features an induction stove, range hood, microwave, refrigerator, rice cooker, electric kettle, and cookware/utensils. Please avoid heavy or smelly frying (such as dried fish/tuyo).",
+        "polite": "Yes, light cooking is permitted in the unit. The kitchen is fully equipped with an induction stove, microwave, refrigerator, rice cooker, electric kettle, and cookware. We kindly ask to refrain from heavy or smelly frying (such as dried fish/tuyo)."
       },
-      tl: {
-        warm: 'Oo, pwedeng magluto ng light cooking sa unit! Kumpleto sa induction stove, microwave, ref, rice cooker, electric kettle, at mga kagamitan. Iwasan lang ang malalansang prito gaya ng tuyo o daing.',
-        polite: 'Opo, maaari po kayong magluto ng light meals sa unit. Kumpleto po ito sa induction stove, microwave, refrigerator, rice cooker, kettle, at cookware. Paki-iwasan lamang po ang malalansang prito tulad ng tuyo o daing.'
+      "tl": {
+        "warm": "Oo, pwedeng magluto ng light cooking sa unit! Kumpleto sa induction stove, microwave, ref, rice cooker, electric kettle, at mga kagamitan. Iwasan lang ang malalansang prito gaya ng tuyo o daing.",
+        "polite": "Opo, maaari po kayong magluto ng light meals sa unit. Kumpleto po ito sa induction stove, microwave, refrigerator, rice cooker, kettle, at cookware. Paki-iwasan lamang po ang malalansang prito tulad ng tuyo o daing."
       },
-      taglish: {
-        warm: 'Yes, pwedeng mag-light cooking! Complete tayo with induction stove, microwave, ref, rice cooker, kettle, and cookware. Bawal lang po ang smelly frying like tuyo or daing.',
-        polite: 'Opo, allowed po mag-light cooking! Complete po ang kitchen with induction stove, microwave, ref, rice cooker, kettle, and cookware. Paki-avoid lang po ang smelly frying like tuyo or daing.'
+      "taglish": {
+        "warm": "Yes, pwedeng mag-light cooking! Complete tayo with induction stove, microwave, ref, rice cooker, kettle, and cookware. Bawal lang po ang smelly frying like tuyo or daing.",
+        "polite": "Opo, allowed po mag-light cooking! Complete po ang kitchen with induction stove, microwave, ref, rice cooker, kettle, and cookware. Paki-avoid lang po ang smelly frying like tuyo or daing."
       }
     }
   },
-  checkin_checkout: {
-    id: 'checkin_checkout',
-    title: 'Check-in & Check-out Times',
-    keywords: ['check-in', 'checkin', 'check-out', 'checkout', 'oras', 'time', 'dating', 'alis', 'chckin', 'chckout', 'arrival', 'departure'],
-    responses: {
-      en: {
-        warm: 'Standard check-in time is 3:00 PM and check-out is 11:00 AM to allow ample time for professional sanitization.',
-        polite: 'Standard check-in time is 3:00 PM and check-out is 11:00 AM. This schedule ensures our caretaking team has ample time to thoroughly clean and sanitize the unit for your stay.'
+  "checkin_checkout": {
+    "id": "checkin_checkout",
+    "title": "Check-in & Check-out Times",
+    "keywords": [
+      "check-in",
+      "checkin",
+      "check-out",
+      "checkout",
+      "oras",
+      "time",
+      "dating",
+      "alis",
+      "chckin",
+      "chckout",
+      "arrival",
+      "departure"
+    ],
+    "responses": {
+      "en": {
+        "warm": "Standard check-in time is 3:00 PM and check-out is 11:00 AM to allow ample time for professional sanitization.",
+        "polite": "Standard check-in time is 3:00 PM and check-out is 11:00 AM. This schedule ensures our caretaking team has ample time to thoroughly clean and sanitize the unit for your stay."
       },
-      tl: {
-        warm: 'Ang check-in time ay 3:00 PM at check-out naman ay 11:00 AM para may oras maglinis at mag-sanitize.',
-        polite: 'Ang amin pong standard check-in time ay 3:00 PM at ang check-out naman po ay 11:00 AM upang mabigyang-daan ang masusing paglilinis at sanitasyon ng unit bago ang inyong pagdating.'
+      "tl": {
+        "warm": "Ang check-in time ay 3:00 PM at check-out naman ay 11:00 AM para may oras maglinis at mag-sanitize.",
+        "polite": "Ang amin pong standard check-in time ay 3:00 PM at ang check-out naman po ay 11:00 AM upang mabigyang-daan ang masusing paglilinis at sanitasyon ng unit bago ang inyong pagdating."
       },
-      taglish: {
-        warm: 'Check-in is at 3:00 PM and check-out is at 11:00 AM para may ample time for sanitization between guests.',
-        polite: 'Check-in is at 3:00 PM and check-out is at 11:00 AM po para masiguro ang thorough sanitization ng unit para sa inyong stay.'
+      "taglish": {
+        "warm": "Check-in is at 3:00 PM and check-out is at 11:00 AM para may ample time for sanitization between guests.",
+        "polite": "Check-in is at 3:00 PM and check-out is at 11:00 AM po para masiguro ang thorough sanitization ng unit para sa inyong stay."
       }
     }
   },
-  amenities_wifi: {
-    id: 'amenities_wifi',
-    title: 'Amenities & Wi-Fi',
-    keywords: ['wifi', 'wi-fi', 'internet', 'pool', 'swimming', 'amenities', 'paliguan', 'towels', 'netflix', 'tv', 'shower', 'heater'],
-    responses: {
-      en: {
-        warm: 'Unit 418 includes high-speed fiber Wi-Fi, Smart TV with Netflix, hot & cold shower, fresh linens, and access to the Serin East swimming pool & garden amenity areas.',
-        polite: 'Unit 418 offers high-speed fiber Wi-Fi, a Smart TV with Netflix, hot & cold shower, fresh linens, and access to the Serin East swimming pool and garden amenity grounds.'
+  "amenities_wifi": {
+    "id": "amenities_wifi",
+    "title": "Amenities & Wi-Fi",
+    "keywords": [
+      "wifi",
+      "wi-fi",
+      "internet",
+      "pool",
+      "swimming",
+      "amenities",
+      "paliguan",
+      "towels",
+      "netflix",
+      "tv",
+      "shower",
+      "heater"
+    ],
+    "responses": {
+      "en": {
+        "warm": "Unit 418 includes high-speed fiber Wi-Fi, Smart TV with Netflix, hot & cold shower, fresh linens, and access to the Serin East swimming pool & garden amenity areas.",
+        "polite": "Unit 418 offers high-speed fiber Wi-Fi, a Smart TV with Netflix, hot & cold shower, fresh linens, and access to the Serin East swimming pool and garden amenity grounds."
       },
-      tl: {
-        warm: 'May mabilis na fiber Wi-Fi ang Unit 418, Smart TV na may Netflix, hot & cold shower, malinis na tuwalya, at access sa swimming pool at garden ng Serin East.',
-        polite: 'Mayroon po tayong high-speed fiber Wi-Fi sa Unit 418, Smart TV na may Netflix, hot & cold shower, malinis na tuwalya, at access sa swimming pool at hardin ng Serin East.'
+      "tl": {
+        "warm": "May mabilis na fiber Wi-Fi ang Unit 418, Smart TV na may Netflix, hot & cold shower, malinis na tuwalya, at access sa swimming pool at garden ng Serin East.",
+        "polite": "Mayroon po tayong high-speed fiber Wi-Fi sa Unit 418, Smart TV na may Netflix, hot & cold shower, malinis na tuwalya, at access sa swimming pool at hardin ng Serin East."
       },
-      taglish: {
-        warm: 'Unit 418 is equipped with fast fiber Wi-Fi, Smart TV with Netflix, hot shower, fresh towels, plus access sa Serin East swimming pool and garden.',
-        polite: 'Equipped po ang Unit 418 with high-speed fiber Wi-Fi, Smart TV with Netflix, hot shower, and access sa Serin East swimming pool and garden amenities.'
+      "taglish": {
+        "warm": "Unit 418 is equipped with fast fiber Wi-Fi, Smart TV with Netflix, hot shower, fresh towels, plus access sa Serin East swimming pool and garden.",
+        "polite": "Equipped po ang Unit 418 with high-speed fiber Wi-Fi, Smart TV with Netflix, hot shower, and access sa Serin East swimming pool and garden amenities."
       }
     }
   },
-  parking_location: {
-    id: 'parking_location',
-    title: 'Location & Parking',
-    keywords: ['parking', 'park', 'sasakyan', 'location', 'address', 'saan', 'serin', 'ayala', 'simbahan', 'lourdes', 'staycation', 'direksyon', 'mapa'],
-    responses: {
-      en: {
-        warm: 'We are located at Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, right beside Ayala Malls Serin and Lourdes Church! Pay parking is available on-site.',
-        polite: 'We are conveniently located at Unit 418 Serin East Tagaytay, Brgy. Silang Crossing East, right beside Ayala Malls Serin and Lourdes Church. Pay parking is conveniently available on-site.'
+  "parking_location": {
+    "id": "parking_location",
+    "title": "Location & Parking",
+    "keywords": [
+      "parking",
+      "park",
+      "sasakyan",
+      "location",
+      "address",
+      "saan",
+      "serin",
+      "ayala",
+      "simbahan",
+      "lourdes",
+      "staycation",
+      "direksyon",
+      "mapa",
+      "350",
+      "covered",
+      "street"
+    ],
+    "responses": {
+      "en": {
+        "warm": "Street parking is free in front of Serin East. Covered parking inside the tower is available for ₱350/night upon advance reservation. Located right across Ayala Malls Serin and walking distance to Lourdes Church!",
+        "polite": "Street parking is available in front of Serin East Tagaytay. In addition, covered parking inside the tower can be arranged for ₱350 per night (subject to availability). The property is ideally situated across Ayala Malls Serin and near Lourdes Church."
       },
-      tl: {
-        warm: 'Nasa Unit 418 Serin East Tagaytay kami, Brgy. Silang Crossing East, katabi ng Ayala Malls Serin at Lourdes Church! May available na on-site pay parking.',
-        polite: 'Matatagpuan po ang Unit 418 sa Serin East Tagaytay, Brgy. Silang Crossing East, katabi mismo ng Ayala Malls Serin at Lourdes Church. Mayroon po itong convenient on-site pay parking para sa inyong sasakyan.'
+      "tl": {
+        "warm": "May street parking sa tapat ng Serin East. Puwede ring mag-arrange ng covered parking sa loob ng tower sa ₱350 kada gabi (depende sa slot). Katapat lang ito ng Ayala Malls Serin at malapit sa Lourdes Church!",
+        "polite": "Mayroon po tayong street parking sa tapat ng Serin East Tagaytay. Maaari rin po tayong mag-book ng covered parking slot sa loob sa halagang ₱350 bawat gabi. Matatagpuan po ito katapat lamang ng Ayala Malls Serin at malapit sa Simbahan ng Lourdes."
       },
-      taglish: {
-        warm: 'Very accessible location right beside Ayala Malls Serin and Lourdes Church sa Brgy. Silang Crossing East, Tagaytay City! May pay parking po sa building.',
-        polite: 'Very accessible po ang location right beside Ayala Malls Serin and Lourdes Church sa Tagaytay City. May available on-site pay parking din po.'
+      "taglish": {
+        "warm": "Street parking is free in front of Serin East, or covered parking inside for ₱350/night! Super lapit, tapat lang ng Ayala Malls Serin and walking distance to Lourdes Church.",
+        "polite": "May available po tayong street parking in front of Serin East, plus covered parking inside for ₱350 per night upon reservation. Tapat lamang po ito ng Ayala Malls Serin at walking distance sa Lourdes Church."
       }
     }
   },
-  pricing_discounts: {
-    id: 'pricing_discounts',
-    title: 'Pricing & Rates',
-    keywords: ['rate', 'rates', 'price', 'pricing', 'magkano', 'how much', 'cost', 'discount', 'mura', 'bawas', 'presyo', 'singil', 'promo'],
-    responses: {
-      en: {
-        warm: 'Our dynamic nightly rates adjust automatically based on season and demand to give you the best direct value for your Tagaytay staycation!',
-        polite: 'Our dynamic rates are calibrated daily to ensure competitive and transparent pricing for your Tagaytay staycation.'
+  "guest_endorsement": {
+    "id": "guest_endorsement",
+    "title": "Guest Endorsement & Requirements",
+    "keywords": [
+      "endorsement",
+      "carrd",
+      "pass",
+      "admin",
+      "clearance",
+      "reception",
+      "lobby",
+      "form",
+      "valid id"
+    ],
+    "responses": {
+      "en": {
+        "warm": "Admin requires prior guest endorsement before entry. Please submit 1 valid government ID for the lead guest and list of all guest names via our endorsement portal: https://serineasttagaytayendorsement.carrd.co/",
+        "polite": "Building administration requires prior guest endorsement before check-in. Kindly submit one valid government ID and list of all guest names through our endorsement portal: https://serineasttagaytayendorsement.carrd.co/"
       },
-      tl: {
-        warm: 'Naka-calibrate ang aming dynamic rates base sa season at demand para mabigyan kayo ng pinakasulit na presyo para sa inyong staycation!',
-        polite: 'Ang aming mga rates po ay regular na ina-adjust ayon sa season upang masiguro ang abot-kaya at tapat na presyo para sa inyong staycation.'
+      "tl": {
+        "warm": "Kailangan po ng guest endorsement bago pumasok sa building. Mag-submit lang ng 1 valid ID at pangalan ng mga kasama sa portal: https://serineasttagaytayendorsement.carrd.co/",
+        "polite": "Kinakailangan po ng prior guest endorsement ng Serin East admin. Paki-pasa lamang po ang 1 valid government ID at listahan ng pangalan ng lahat ng kasama sa: https://serineasttagaytayendorsement.carrd.co/"
       },
-      taglish: {
-        warm: 'Dynamic ang nightly rates natin base sa season and demand para guaranteed sulit ang Tagaytay staycation ninyo!',
-        polite: 'Dynamic po ang rates natin base sa season at demand upang masiguro ang best value para sa inyong staycation.'
+      "taglish": {
+        "warm": "Required po ang guest endorsement bago pumasok sa Serin East! Just submit 1 valid ID and list of all guest names through this link: https://serineasttagaytayendorsement.carrd.co/",
+        "polite": "Required po ng building admin ang prior guest endorsement. Kindly submit 1 valid ID and complete guest list through our official link: https://serineasttagaytayendorsement.carrd.co/"
+      }
+    }
+  },
+  "digital_lock_checkin": {
+    "id": "digital_lock_checkin",
+    "title": "Digital Smart Lock Access",
+    "keywords": [
+      "digital lock",
+      "door code",
+      "smart lock",
+      "code",
+      "susi",
+      "pinto",
+      "keypad",
+      "passcode"
+    ],
+    "responses": {
+      "en": {
+        "warm": "Unit 418 is secured with a digital smart lock! We program a unique pin code for each guest and send it on check-in day upon arrival.",
+        "polite": "Unit 418 features a secure digital smart lock. A unique access code is generated specifically for your stay and sent upon your arrival at the property."
+      },
+      "tl": {
+        "warm": "May digital smart lock ang Unit 418! Nagse-set kami ng unique code bawat guest at ibibigay pagdating ninyo sa check-in time.",
+        "polite": "Naka-digital smart lock po ang pinto ng Unit 418. Nagtatalaga po kami ng natatanging access code para sa inyong stay na ipapadala pagdating po ninyo."
+      },
+      "taglish": {
+        "warm": "Secured ang unit with digital smart lock! We set a customized passcode per guest and send it directly upon arrival.",
+        "polite": "Equipped po ang Unit 418 with digital smart lock. We generate a unique pin code per reservation na ipapadala po sa inyo upon check-in."
+      }
+    }
+  },
+  "damage_deposit": {
+    "id": "damage_deposit",
+    "title": "Security & Damage Deposit Policy",
+    "keywords": [
+      "damage deposit",
+      "security deposit",
+      "deposit",
+      "aircover",
+      "agoda",
+      "piyansa",
+      "refundable",
+      "3000",
+      "3,000"
+    ],
+    "responses": {
+      "en": {
+        "warm": "For Airbnb, bookings are protected by AirCover. For direct bookings or Agoda, a refundable ₱3,000 security deposit is collected upon check-in and returned after unit inspection upon check-out.",
+        "polite": "Airbnb bookings are covered under AirCover host protection. For direct reservations and Agoda, a refundable security deposit of ₱3,000 is requested upon check-in, returned in full after post-checkout inspection."
+      },
+      "tl": {
+        "warm": "Para sa Airbnb, covered tayo ng AirCover. Kapag direct booking o Agoda, may refundable ₱3,000 security deposit na ibinabalik pagka-inspect ng unit sa check-out.",
+        "polite": "Sa Airbnb po ay protektado ng AirCover. Para naman po sa direct bookings at Agoda, mayroon po tayong refundable ₱3,000 security deposit na buong ibinabalik matapos ang maayos na inspection sa check-out."
+      },
+      "taglish": {
+        "warm": "Airbnb is covered by AirCover! For direct or Agoda bookings, we collect a refundable ₱3,000 security deposit upon check-in, fully returned after checkout inspection.",
+        "polite": "Covered po ang Airbnb stays under AirCover. For direct and Agoda reservations, may refundable ₱3,000 damage deposit po tayo na ibinabalik after unit inspection upon check-out."
       }
     }
   }
-};
+};;
 
 /**
  * Common hospitality domain loanwords that are used across all languages
